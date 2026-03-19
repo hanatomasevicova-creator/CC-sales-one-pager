@@ -618,7 +618,19 @@
       }
       .op {
         box-shadow: none; width: 100%; margin: 0;
-        border-radius: 0;
+        border-radius: 0; padding-top: 58px;
+      }
+
+      /* Header se opakuje na každé stránce */
+      .op-header {
+        position: fixed; top: 0; left: 0; width: 100%;
+        z-index: 1000; border-radius: 0;
+      }
+
+      /* Mezera po hlavičce na začátku obsahu nové stránky */
+      .op-cover, .op-body, .op-products, .op-value-bar,
+      .op-quote, .op-cctip, .op-contact {
+        padding-top: 0;
       }
 
       /* Nikdy nepřelomit uprostřed těchto bloků */
@@ -673,7 +685,7 @@
         <input type="text" id="clientName" placeholder="např. Acme s.r.o." oninput="update()">
       </div>
       <div class="field">
-        <label class="lbl">Nadpis spolupráce</label>
+        <label class="lbl">Popis spolupráce</label>
         <input type="text" id="collabTitle" placeholder="např. Partnerství People First 2025" oninput="update()">
       </div>
       <div class="field">
@@ -1337,7 +1349,7 @@ function renderProductCards() {
           <label class="lbl">Specifikace</label>
           <div class="ta-wrap">
             <button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button>
-            <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="Specifikace produktu…" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
+            <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="např. konkrétní téma" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
           </div>
         </div>
         <div class="field">
