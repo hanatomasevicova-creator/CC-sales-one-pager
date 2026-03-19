@@ -416,6 +416,7 @@
     }
     .op-product-details {
       padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+      position: relative;
     }
     .op-product-name {
       font-family: 'Barlow Condensed', sans-serif;
@@ -427,9 +428,10 @@
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 15px; font-weight: 600; color: var(--g400);
       letter-spacing: .02em;
+      position: absolute; bottom: 14px; right: 16px;
     }
     .op-product-bottom-row {
-      display: grid; grid-template-columns: 1fr 4px 1fr 1fr;
+      display: grid; grid-template-columns: 1fr 4px 1fr;
       gap: 0; margin-top: 8px; align-items: start;
     }
     .op-product-bottom-row > *:not(.col-resize) { padding: 0 4px; }
@@ -565,9 +567,7 @@
     }
     .op-cctip-right img {
       display: block;
-      max-width: 100%;
-      max-height: 160px;
-      width: auto;
+      width: 100%;
       height: auto;
       object-fit: contain;
       border-radius: 6px;
@@ -620,10 +620,26 @@
         box-shadow: none; width: 100%; margin: 0;
         border-radius: 0;
       }
-      .op-product { page-break-inside: avoid; break-inside: avoid; }
-      .op-value-bar { page-break-inside: avoid; break-inside: avoid; }
-      .op-tips { page-break-inside: avoid; break-inside: avoid; }
-      .op-contact { page-break-inside: avoid; break-inside: avoid; }
+
+      /* Nikdy nepřelomit uprostřed těchto bloků */
+      .op-header        { break-inside: avoid; page-break-inside: avoid; }
+      .op-cover         { break-inside: avoid; page-break-inside: avoid; }
+      .op-camp-grid     { break-inside: avoid; page-break-inside: avoid; }
+      .op-product       { break-inside: avoid; page-break-inside: avoid; }
+      .op-value-bar     { break-inside: avoid; page-break-inside: avoid; }
+      .op-quote         { break-inside: avoid; page-break-inside: avoid; }
+      .op-cctip         { break-inside: avoid; page-break-inside: avoid; }
+      .op-contact       { break-inside: avoid; page-break-inside: avoid; }
+      .op-footer        { break-inside: avoid; page-break-inside: avoid; }
+
+      /* Začít novou stránku před produkty a hodnotovým pásem pokud je to nutné */
+      .op-products      { break-before: auto; }
+      .op-value-bar     { break-before: avoid; }
+      .op-contact       { break-before: avoid; }
+      .op-footer        { break-before: avoid; }
+
+      /* Nedělat orphans/widows — min. 3 řádky na stránce */
+      p, li, div { orphans: 3; widows: 3; }
     }
   </style>
 </head>
@@ -833,7 +849,7 @@
       <div class="op-cctip-desc">Zapojte mediální formáty CC do svých kampaní a posilte dosah i důvěru u vašeho publika.</div>
     </div>
     <div class="op-cctip-right">
-      <img src="photos/cc-tip-mockup-new.jpg" alt="CC mediální formáty">
+      <img src="photos/cc-tip-mockup.png" alt="CC mediální formáty">
     </div>
   </div>
 
@@ -1037,9 +1053,9 @@ function startColResize(e, row) {
   function onMove(ev) {
     const dx = ev.clientX - startX;
     const delta = dx / rowW;
-    let col1 = Math.max(0.15, Math.min(0.7, startFr + delta));
-    const rest = (1 - col1) / 2;
-    row.style.gridTemplateColumns = `${col1}fr 4px ${rest}fr ${rest}fr`;
+    let col1 = Math.max(0.2, Math.min(0.75, startFr + delta));
+    const col2 = 1 - col1;
+    row.style.gridTemplateColumns = `${col1}fr 4px ${col2}fr`;
   }
   function onUp() {
     handle.classList.remove('dragging');
@@ -1513,14 +1529,14 @@ function update() {
           row.appendChild(document.createElement('div'));
         }
 
-        if (hasPrice) {
-          const price = document.createElement('div');
-          price.className = 'op-product-price';
-          price.textContent = p.price;
-          row.appendChild(price);
-        }
-
         details.appendChild(row);
+      }
+
+      if (hasPrice) {
+        const price = document.createElement('div');
+        price.className = 'op-product-price';
+        price.textContent = p.price;
+        details.appendChild(price);
       }
 
       card.appendChild(photoCol);
