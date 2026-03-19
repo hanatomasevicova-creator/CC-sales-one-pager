@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CzechCrunch — One Pager Builder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #0a0a0a;
+      --white: #ffffff;
+      --g50:  #fafafa;
+      --g100: #f4f4f4;
+      --g200: #e8e8e8;
+      --g300: #d0d0d0;
+      --g400: #9a9a9a;
+      --g600: #555555;
+      --sidebar: 380px;
+      --a4: 794px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #ddd;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: var(--black);
+    }
+
+    /* ═══ SIDEBAR ═══ */
+    .sidebar {
+      width: var(--sidebar);
+      min-width: var(--sidebar);
+      background: var(--white);
+      border-right: 1px solid var(--g200);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sb-head {
+      background: var(--black);
+      padding: 16px 22px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sb-head-label {
+      font-size: 10px; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: rgba(255,255,255,.4);
+    }
+
+    .sb-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--g200);
+      flex-shrink: 0;
+    }
+    .sb-tab {
+      flex: 1; padding: 10px 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: .05em; text-align: center;
+      cursor: pointer; color: var(--g400); border-bottom: 2px solid transparent;
+      transition: all .15s; background: none;
+      border-top: none; border-left: none; border-right: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .sb-tab.active { color: var(--black); border-bottom-color: var(--black); }
+    .sb-tab:hover:not(.active) { color: var(--g600); }
+
+    .sb-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+    .sb-panel.active { display: flex; }
+
+    .sb-scroll { flex: 1; overflow-y: auto; padding: 18px 22px; }
+    .sb-scroll::-webkit-scrollbar { width: 3px; }
+    .sb-scroll::-webkit-scrollbar-thumb { background: var(--g200); border-radius: 2px; }
+
+    /* form elements */
+    .sep {
+      font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--g300); margin: 18px 0 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sep::after { content: ''; flex: 1; height: 1px; background: var(--g200); }
+    .sep:first-child { margin-top: 0; }
+
+    .field { margin-bottom: 12px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+    label.lbl {
+      display: block; font-size: 11px; font-weight: 600;
+      letter-spacing: .04em; color: var(--g400); margin-bottom: 4px; text-transform: uppercase;
+    }
+    input[type="text"], textarea {
+      width: 100%; border: 1px solid var(--g200); border-radius: 6px;
+      padding: 8px 10px; font-family: 'Inter', sans-serif; font-size: 13px;
+      color: var(--black); background: var(--g50); outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: var(--black); background: var(--white); }
+    textarea { resize: vertical; min-height: 62px; line-height: 1.5; }
+
+    /* presets */
+
+    /* cover photo picker */
+    .cover-pick {
+      width: 100%; aspect-ratio: 16/7;
+      border: 1.5px dashed var(--g300); border-radius: 7px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; cursor: pointer; background: var(--g50); overflow: hidden;
+      transition: border-color .15s; position: relative;
+    }
+    .cover-pick:hover { border-color: var(--black); }
+    .cover-pick img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .cover-pick-label {
+      position: relative; z-index: 1; font-size: 11px; font-weight: 600;
+      color: var(--g400); background: rgba(255,255,255,.85);
+      padding: 4px 10px; border-radius: 4px; transition: color .15s;
+    }
+    .cover-pick:hover .cover-pick-label { color: var(--black); }
+
+    /* photo target banner */
+    .photo-target-banner {
+      display: none; background: var(--black); color: var(--white);
+      padding: 9px 14px; font-size: 11px; font-weight: 600;
+      align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .photo-target-banner.visible { display: flex; }
+    .photo-target-cancel {
+      background: none; border: 1px solid rgba(255,255,255,.3); border-radius: 4px;
+      color: var(--white); font-size: 10px; font-weight: 600; padding: 3px 8px;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+
+    /* products in sidebar */
+    .product-cards { display: flex; flex-direction: column; gap: 10px; }
+    .product-card-sb {
+      border: 1px solid var(--g200); border-radius: 8px; overflow: hidden;
+    }
+    .product-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; background: var(--g50); cursor: pointer;
+      border-bottom: 1px solid var(--g200);
+    }
+    .product-card-head-title { font-size: 12px; font-weight: 700; }
+    .product-card-toggle { font-size: 12px; color: var(--g400); transition: transform .2s; }
+    .product-card-sb.open .product-card-toggle { transform: rotate(180deg); }
+    .product-card-body { padding: 12px; display: none; }
+    .product-card-sb.open .product-card-body { display: block; }
+    .product-cover-pick {
+      width: 100%; aspect-ratio: 1/1;
+      border: 1.5px dashed var(--g300); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; cursor: pointer; background: var(--g50); overflow: hidden;
+      margin-bottom: 10px; position: relative; transition: border-color .15s;
+      font-size: 11px; font-weight: 600; color: var(--g400);
+    }
+    .product-cover-pick:hover { border-color: var(--black); color: var(--black); }
+    .product-cover-pick img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .product-cover-label {
+      position: relative; z-index: 1; background: rgba(255,255,255,.85);
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .product-cover-remove {
+      position: absolute; top: 5px; right: 5px; z-index: 2;
+      background: rgba(0,0,0,.55); color: #fff; border: none; border-radius: 50%;
+      width: 22px; height: 22px; font-size: 13px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .product-cover-remove:hover { background: rgba(0,0,0,.8); }
+    .product-del-btn {
+      font-size: 11px; font-weight: 600; color: var(--g400);
+      background: none; border: 1px solid var(--g200); border-radius: 5px;
+      padding: 5px 10px; cursor: pointer; font-family: 'Inter', sans-serif;
+      margin-top: 10px; width: 100%; transition: all .15s;
+    }
+    .product-del-btn:hover { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
+    .btn-add-product {
+      width: 100%; padding: 9px; border: 1.5px dashed var(--g200); border-radius: 7px;
+      background: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 700; color: var(--g400); letter-spacing: .04em;
+      transition: all .15s; margin-top: 4px;
+    }
+    .btn-add-product:hover { border-color: var(--black); color: var(--black); }
+
+    /* tips */
+    .tips-list { display: flex; flex-direction: column; gap: 7px; }
+    .tip-row { display: flex; gap: 6px; align-items: center; }
+    .tip-row input { flex: 1; }
+    .tip-del {
+      width: 26px; height: 26px; flex-shrink: 0;
+      border: 1px solid var(--g200); border-radius: 50%;
+      background: none; cursor: pointer; font-size: 15px; color: var(--g400);
+      display: flex; align-items: center; justify-content: center; transition: all .15s;
+    }
+    .tip-del:hover { background: var(--black); color: var(--white); border-color: var(--black); }
+    .btn-add {
+      width: 100%; padding: 8px; margin-top: 7px;
+      border: 1px dashed var(--g200); border-radius: 6px;
+      background: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: 12px; font-weight: 600; color: var(--g400); transition: all .15s;
+    }
+    .btn-add:hover { border-color: var(--black); color: var(--black); }
+
+    /* bullet textarea wrapper */
+    .ta-wrap { position: relative; }
+    .bullet-btn {
+      position: absolute; top: -22px; right: 0;
+      font-size: 10px; font-weight: 700; font-family: 'Inter', sans-serif;
+      color: var(--g400); background: none; border: 1px solid var(--g200);
+      border-radius: 4px; padding: 2px 7px; cursor: pointer;
+      transition: all .15s; letter-spacing: .03em;
+    }
+    .bullet-btn:hover { color: var(--black); border-color: var(--black); }
+
+    /* preview list styles */
+    .op-list { padding-left: 15px; margin: 3px 0; }
+    .op-list li { line-height: 1.65; margin-bottom: 1px; }
+    .op-camp-text .op-list li { font-size: 13px; color: var(--g600); }
+    .op-product-desc .op-list li { font-size: 12px; color: var(--g600); }
+    .op-product-stat-val .op-list li { font-size: 12px; color: var(--black); font-weight: 500; }
+    .op-product-zapojeni { margin-top: 8px; font-size: 12px; color: var(--g600); font-style: italic; line-height: 1.5; }
+    .op-product-zapojeni-label { font-style: normal; font-weight: 700; color: var(--black); }
+    .op-text-p { margin: 0 0 2px; }
+
+    /* photo bank */
+    .folder-tabs {
+      display: flex; border-bottom: 1px solid var(--g200); flex-shrink: 0;
+    }
+    .folder-tab {
+      flex: 1; padding: 8px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; text-align: center;
+      cursor: pointer; color: var(--g400); border-bottom: 2px solid transparent;
+      transition: all .15s; background: none;
+      border-top: none; border-left: none; border-right: none;
+      font-family: 'Inter', sans-serif; white-space: nowrap;
+    }
+    .folder-tab.active { color: var(--black); border-bottom-color: var(--black); }
+    .folder-tab:hover:not(.active) { color: var(--g600); }
+    .fc {
+      display: inline-block; background: var(--g200); color: var(--g600);
+      border-radius: 10px; padding: 1px 5px; font-size: 9px; margin-left: 3px; font-weight: 600;
+    }
+    .folder-tab.active .fc { background: var(--black); color: var(--white); }
+
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .photo-thumb {
+      aspect-ratio: 16/10; border-radius: 5px; overflow: hidden;
+      cursor: pointer; border: 2px solid transparent; transition: border-color .15s; position: relative;
+    }
+    .photo-thumb:hover { border-color: var(--g400); }
+    .photo-thumb.active { border-color: var(--black); }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,.38);
+      opacity: 0; transition: opacity .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .photo-thumb:hover .thumb-overlay, .photo-thumb.active .thumb-overlay { opacity: 1; }
+    .photo-thumb.active .thumb-overlay { background: rgba(0,0,0,.5); }
+    .thumb-check { font-size: 20px; color: var(--white); flex: 1; display: flex; align-items: center; justify-content: center; }
+    .thumb-del {
+      position: absolute; top: 4px; right: 4px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: rgba(0,0,0,.6); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--white); font-size: 12px; transition: background .15s;
+    }
+    .thumb-del:hover { background: #dc2626; }
+    .thumb-move {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; gap: 3px; padding: 4px; justify-content: center;
+    }
+    .thumb-move-btn {
+      font-size: 9px; font-weight: 700; font-family: 'Inter', sans-serif;
+      letter-spacing: .05em; text-transform: uppercase;
+      background: rgba(255,255,255,.92); color: var(--black);
+      border: none; border-radius: 3px; padding: 2px 5px; cursor: pointer;
+      white-space: nowrap; transition: background .12s;
+    }
+    .thumb-move-btn:hover { background: var(--white); }
+    .photo-empty {
+      grid-column: 1/-1; text-align: center; padding: 24px 12px;
+      font-size: 12px; color: var(--g300);
+    }
+    .photo-upload-btn {
+      width: 100%; margin-top: 10px; padding: 10px;
+      border-radius: 6px; border: 1.5px dashed var(--g300);
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      cursor: pointer; background: var(--g50);
+      font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+      color: var(--g400); transition: border-color .15s, color .15s;
+    }
+    .photo-upload-btn:hover { border-color: var(--black); color: var(--black); }
+
+    /* sidebar footer */
+    .sb-footer { padding: 13px 22px; border-top: 1px solid var(--g200); flex-shrink: 0; }
+    .btn-print {
+      width: 100%; padding: 11px; background: var(--black); color: var(--white);
+      border: none; border-radius: 7px; font-family: 'Inter', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: .03em;
+      transition: opacity .15s;
+    }
+    .btn-print:hover { opacity: .82; }
+
+    /* ═══ PREVIEW WRAP ═══ */
+    .preview-wrap {
+      flex: 1; overflow-y: auto;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 32px 24px;
+    }
+    .preview-wrap::-webkit-scrollbar { width: 5px; }
+    .preview-wrap::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+
+    /* ═══ ONE PAGER ═══ */
+    .op {
+      width: var(--a4);
+      background: var(--white);
+      box-shadow: 0 8px 48px rgba(0,0,0,.16);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Header */
+    .op-header {
+      background: var(--black);
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .op-client-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; color: rgba(255,255,255,.45);
+    }
+
+    /* Cover */
+    .op-cover {
+      width: 100%; height: 280px; position: relative; overflow: hidden;
+      background: var(--g100);
+    }
+    .op-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .op-cover-ph {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: var(--g300); letter-spacing: .1em; text-transform: uppercase;
+    }
+    .op-cover::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.65) 0%, rgba(0,0,0,.1) 50%, transparent 100%);
+      pointer-events: none;
+    }
+    .op-cover-caption {
+      position: absolute; bottom: 28px; left: 40px; right: 40px; z-index: 1;
+    }
+    .op-cover-tag {
+      font-size: 10px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+      color: rgba(255,255,255,.7); margin-bottom: 7px;
+    }
+    .op-cover-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 44px; font-weight: 900; line-height: 1; text-transform: uppercase;
+      color: var(--white); letter-spacing: .01em;
+    }
+
+    /* Body */
+    .op-body { padding: 36px 40px 0; }
+
+    .op-section-head {
+      font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+      color: var(--g300); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .op-section-head::after { content: ''; flex: 1; height: 1px; background: var(--g200); }
+
+    .op-section-head-large {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .03em; color: var(--black);
+      margin-bottom: 18px;
+    }
+
+    /* Campaign detail – 3 cols */
+    .op-camp-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 0; margin-bottom: 32px;
+    }
+    .op-camp-col {
+      padding-right: 24px; border-right: 1px solid var(--g200);
+      margin-right: 24px;
+    }
+    .op-camp-col:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+    .op-camp-label {
+      font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--g300); margin-bottom: 6px;
+    }
+    .op-camp-text { font-size: 13px; line-height: 1.65; color: var(--g600); }
+
+    /* Products */
+    .op-products { padding: 0 40px; }
+    .op-product {
+      display: grid; grid-template-columns: 140px 1fr;
+      gap: 0; border: 1px solid var(--g200); border-radius: 8px;
+      overflow: hidden; margin-bottom: 10px;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .op-product-photo {
+      width: 140px; aspect-ratio: 1/1; background: var(--g100); position: relative; align-self: start;
+    }
+    .op-product-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 6px 0 0 0; }
+    .op-product-photo-ph {
+      width: 100%; height: 100%; min-height: 140px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--g300); letter-spacing: .08em;
+    }
+    .op-product-details {
+      padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .op-product-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px; font-weight: 900; text-transform: uppercase;
+      color: var(--black); line-height: 1; letter-spacing: .01em;
+    }
+    .op-product-desc { font-size: 11px; line-height: 1.55; color: var(--g600); flex: 1; }
+    .op-product-price {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px; font-weight: 600; color: var(--g400);
+      letter-spacing: .02em;
+    }
+    .op-product-bottom-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-top: 8px; align-items: start;
+    }
+
+    /* Value bar */
+    .op-value-bar {
+      padding: 18px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      page-break-inside: avoid; break-inside: avoid;
+      border-top: 1px solid var(--g200);
+      border-bottom: 1px solid var(--g200);
+    }
+    .op-value-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px; font-weight: 800; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--black);
+    }
+    .op-value-amount {
+      background: var(--g100); border-radius: 10px;
+      padding: 8px 20px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px; font-weight: 900; letter-spacing: -.01em;
+      color: var(--black);
+    }
+    .op-value-amount.striked {
+      font-size: 20px; font-weight: 400;
+      text-decoration: line-through; color: var(--g400);
+      background: none; padding: 0; align-self: flex-start;
+    }
+    .op-value-special {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    }
+    .op-value-special-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--g400);
+    }
+    .op-value-special-amount {
+      background: var(--g100); border-radius: 8px;
+      padding: 6px 16px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 24px; font-weight: 900; letter-spacing: -.01em;
+      color: var(--black);
+    }
+
+    /* Tips */
+    /* Quote sekce */
+    .op-quote {
+      padding: 36px 60px 32px;
+      page-break-inside: avoid; break-inside: avoid;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .op-quote::before {
+      content: '\201E';
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 120px; font-weight: 900; line-height: 1;
+      color: var(--g200);
+      position: absolute; top: -10px; left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none; z-index: 0;
+    }
+    .op-quote-text {
+      position: relative;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 400; font-style: italic;
+      line-height: 1.7; color: var(--g600);
+    }
+    .op-quote-author {
+      position: relative; z-index: 1;
+      margin-top: 10px; font-size: 11px; font-weight: 500;
+      color: var(--g400); letter-spacing: .02em;
+    }
+
+    /* CC Tip */
+    .op-cctip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--g100);
+      overflow: hidden;
+      border-radius: 12px;
+      margin: 0 32px 28px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .op-cctip-left {
+      padding: 22px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 9px;
+    }
+    .op-cctip-badge {
+      display: inline-block;
+      background: var(--g200);
+      color: var(--g600);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 3px;
+      width: fit-content;
+    }
+    .op-cctip-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--black);
+      line-height: 1.05;
+      letter-spacing: .01em;
+    }
+    .op-cctip-desc {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--g600);
+    }
+    .op-cctip-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 16px 24px 16px 8px;
+    }
+    .op-cctip-right img {
+      display: block;
+      max-width: 100%;
+      max-height: 160px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    /* Contact / Těším se na spolupráci */
+    .op-contact {
+      background: var(--g50);
+      border-top: 1px solid var(--g200);
+      padding: 18px 40px 20px;
+      break-inside: avoid;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+    .op-contact-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .02em;
+      color: var(--black);
+      margin-bottom: 4px;
+    }
+    .op-contact-details {
+      font-size: 12px; color: #444; line-height: 1.6;
+    }
+    .op-contact-web {
+      font-size: 11px; font-weight: 600;
+      color: var(--g400); letter-spacing: .04em;
+      margin-top: 4px;
+    }
+
+    /* Footer */
+    .op-footer {
+      background: var(--black); padding: 14px 40px;
+      display: flex; align-items: center; justify-content: space-between; margin-top: auto;
+    }
+    .op-footer-url { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .06em; }
+
+    /* ═══ PRINT ═══ */
+    @page { size: A4; margin: 0; }
+
+    @media print {
+      body { background: white; display: block; height: auto; overflow: visible; }
+      .sidebar, .preview-wrap { display: none !important; }
+      .op-print { display: block !important; }
+      .op {
+        box-shadow: none; width: 100%;
+      }
+      .op-product { page-break-inside: avoid; break-inside: avoid; }
+      .op-value-bar { page-break-inside: avoid; break-inside: avoid; }
+      .op-tips { page-break-inside: avoid; break-inside: avoid; }
+      .op-contact { page-break-inside: avoid; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- hidden file input -->
+<input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<aside class="sidebar">
+  <div class="sb-head">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 20.66" width="130" height="15">
+      <g fill="#ffffff"><path d="M15.49,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,12.79,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7A5.93,5.93,0,0,1,.85,16.65a8.62,8.62,0,0,1-.62-2A14.26,14.26,0,0,1,0,12.56c0-.75,0-1.49,0-2.24S0,8.81,0,8.09A11.52,11.52,0,0,1,.23,6,8.23,8.23,0,0,1,.85,4,5.61,5.61,0,0,1,2.08,2.29,7.69,7.69,0,0,1,4.58.59,8.22,8.22,0,0,1,7.77,0,8.55,8.55,0,0,1,10.5.41a6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93H10.4a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="15.49 19.92 15.49 16.13 23.41 4.37 15.83 4.37 15.83 0 29.51 0 29.51 3.79 21.56 15.55 29.51 15.55 29.51 19.92 15.49 19.92"/><polygon points="30.25 19.89 30.25 0 44.26 0 44.26 4.37 35.32 4.37 35.32 7.7 42.96 7.7 42.96 12.07 35.32 12.07 35.32 15.55 44.26 15.55 44.26 19.92 30.25 19.92 30.25 19.89"/><path d="M61.23,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,58.53,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,46,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,53.51,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29A13.1,13.1,0,0,0,51,14.05a4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="72.4 19.92 72.4 12.03 67.03 12.03 67.03 19.92 61.97 19.92 61.97 0 67.03 0 67.03 7.66 72.4 7.66 72.4 0 77.46 0 77.46 19.92 72.4 19.92"/><path d="M95.16,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,92.46,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,79.9,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,87.44,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Zm11.1,5.87-3.62-7.39h-1.71v7.39h-5V0H104a7.42,7.42,0,0,1,3,.55A6.71,6.71,0,0,1,109.21,2,6.08,6.08,0,0,1,110.55,4,6.27,6.27,0,0,1,111,6.39a5.38,5.38,0,0,1-.31,1.85,6.94,6.94,0,0,1-.78,1.5,6.4,6.4,0,0,1-1.06,1.13,7.79,7.79,0,0,1-1.19.75l4.45,8.29h-5.87ZM106,6.36a2,2,0,0,0-.57-1.4,2.15,2.15,0,0,0-1.6-.63H101v4h2.84a2,2,0,0,0,1.6-.63A1.86,1.86,0,0,0,106,6.36Zm22.35,6.93a7.07,7.07,0,0,1-4.77,6.84,9,9,0,0,1-3,.52,8.66,8.66,0,0,1-3-.52,7.14,7.14,0,0,1-2.45-1.47,7,7,0,0,1-2.27-5.37V0h5V13.17a3.14,3.14,0,0,0,.7,2.22,2.54,2.54,0,0,0,2,.77,2.7,2.7,0,0,0,2-.77,3.07,3.07,0,0,0,.72-2.22V0h5V13.3Z"/><polygon points="141.81 19.92 135.45 9.9 135.45 19.92 130.57 19.92 130.57 0 134.83 0 141.19 10.02 141.19 0 146.07 0 146.07 19.92 141.81 19.92"/><path d="M163.77,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,161.07,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,148.51,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,156.05,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="174.94 19.92 174.94 12.03 169.57 12.03 169.57 19.92 164.51 19.92 164.51 0 169.57 0 169.57 7.66 174.94 7.66 174.94 0 180 0 180 19.92 174.94 19.92"/></g>
+    </svg>
+    <span class="sb-head-label">One Pager</span>
+  </div>
+
+  <div class="sb-tabs">
+    <button class="sb-tab active" onclick="switchTab('form')">Obsah</button>
+    <button class="sb-tab" onclick="switchTab('photos')">Fotobanka</button>
+  </div>
+
+  <!-- ── OBSAH ── -->
+  <div class="sb-panel active" id="tab-form">
+    <div class="sb-scroll">
+
+      <div class="sep">Kampaň</div>
+
+      <div class="field">
+        <label class="lbl">Klient / firma</label>
+        <input type="text" id="clientName" placeholder="např. Acme s.r.o." oninput="update()">
+      </div>
+      <div class="field">
+        <label class="lbl">Nadpis spolupráce</label>
+        <input type="text" id="collabTitle" placeholder="např. Partnerství People First 2025" oninput="update()">
+      </div>
+      <div class="field">
+        <label class="lbl">Hlavní cover fotka</label>
+        <div class="cover-pick" id="mainCoverPick" onclick="openPhotoPicker('main')">
+          <img id="mainCoverImg" style="display:none">
+          <span class="cover-pick-label">📷 Vybrat z fotobanky</span>
+        </div>
+      </div>
+
+      <div class="sep">Detail kampaně</div>
+
+      <div class="field">
+        <label class="lbl">Popis kampaně</label>
+        <div class="ta-wrap">
+          <button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• body</button>
+          <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="lbl">Cílová skupina</label>
+          <div class="ta-wrap">
+            <button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• body</button>
+            <textarea id="targetGroup" class="bullet-ta" style="min-height:52px" placeholder="např. Tech profesionálové 25–45" oninput="update()"></textarea>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Timing</label>
+          <div class="ta-wrap">
+            <button class="bullet-btn" type="button" onclick="insertBullet('timing')">• body</button>
+            <textarea id="timing" class="bullet-ta" style="min-height:52px" placeholder="např. Q2 2025" oninput="update()"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep">Produkty</div>
+
+      <div class="product-cards" id="productCards"></div>
+      <button class="btn-add-product" onclick="addProduct()">+ Přidat produkt</button>
+
+      <div class="sep">Celková hodnota</div>
+      <div class="field">
+        <label class="lbl">Celková hodnota spolupráce</label>
+        <input type="text" id="totalValue" placeholder="např. 360 000 Kč bez DPH" oninput="update()">
+      </div>
+      <div class="field">
+        <label class="lbl">Cena pro vás <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
+        <input type="text" id="specialPrice" placeholder="např. 290 000 Kč bez DPH" oninput="update()">
+      </div>
+
+      <div class="sep">Těším se na spolupráci</div>
+      <div class="field">
+        <label class="lbl">Vybrat kontakt</label>
+        <select id="contactPreset" onchange="applyContactPreset(this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--fg)">
+          <option value="">— Vybrat —</option>
+          <option value="vaclav">Václav Bedřich</option>
+          <option value="martina">Martina Sirotková</option>
+          <option value="jitka">Jitka Beranová</option>
+          <option value="hana">Hana Tomaševičová</option>
+          <option value="lucie">Lucie Slavíková</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl">Jméno</label>
+        <input type="text" id="contactName" placeholder="Jméno a příjmení" oninput="update()">
+      </div>
+      <div class="field">
+        <label class="lbl">E-mail</label>
+        <input type="text" id="contactEmail" placeholder="jmeno@cc.cz" oninput="update()">
+      </div>
+      <div class="field">
+        <label class="lbl">Telefonní číslo</label>
+        <input type="text" id="contactPhone" placeholder="+420 123 456 789" oninput="update()">
+      </div>
+
+    </div>
+    <div class="sb-footer">
+      <button class="btn-print" onclick="window.print()">Tisknout / Uložit jako PDF</button>
+    </div>
+  </div>
+
+  <!-- ── FOTOBANKA ── -->
+  <div class="sb-panel" id="tab-photos">
+    <!-- photo target banner -->
+    <div class="photo-target-banner" id="photoTargetBanner">
+      <span id="photoTargetLabel">Vybíráš fotku pro…</span>
+      <button class="photo-target-cancel" onclick="cancelPhotoPicker()">Zrušit</button>
+    </div>
+
+    <div class="folder-tabs">
+      <button class="folder-tab active" id="ftab-nejnovejsi" onclick="switchFolder('nejnovejsi')">Nejnovější <span class="fc" id="fc-nejnovejsi">0</span></button>
+    </div>
+
+    <div class="sb-scroll" style="padding-top:10px">
+      <div class="photo-grid" id="photoGrid"></div>
+      <button class="photo-upload-btn" onclick="openUpload()">＋ Přidat fotky do <strong id="uploadFolderLabel" style="margin-left:3px">Nejnovější</strong></button>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════ PREVIEW ═══════════ -->
+<div class="preview-wrap">
+<div class="op" id="onepager">
+
+  <!-- Header -->
+  <div class="op-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 20.66" width="110" height="13">
+      <g fill="#ffffff"><path d="M15.49,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,12.79,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7A5.93,5.93,0,0,1,.85,16.65a8.62,8.62,0,0,1-.62-2A14.26,14.26,0,0,1,0,12.56c0-.75,0-1.49,0-2.24S0,8.81,0,8.09A11.52,11.52,0,0,1,.23,6,8.23,8.23,0,0,1,.85,4,5.61,5.61,0,0,1,2.08,2.29,7.69,7.69,0,0,1,4.58.59,8.22,8.22,0,0,1,7.77,0,8.55,8.55,0,0,1,10.5.41a6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93H10.4a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="15.49 19.92 15.49 16.13 23.41 4.37 15.83 4.37 15.83 0 29.51 0 29.51 3.79 21.56 15.55 29.51 15.55 29.51 19.92 15.49 19.92"/><polygon points="30.25 19.89 30.25 0 44.26 0 44.26 4.37 35.32 4.37 35.32 7.7 42.96 7.7 42.96 12.07 35.32 12.07 35.32 15.55 44.26 15.55 44.26 19.92 30.25 19.92 30.25 19.89"/><path d="M61.23,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,58.53,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,46,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,53.51,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29A13.1,13.1,0,0,0,51,14.05a4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="72.4 19.92 72.4 12.03 67.03 12.03 67.03 19.92 61.97 19.92 61.97 0 67.03 0 67.03 7.66 72.4 7.66 72.4 0 77.46 0 77.46 19.92 72.4 19.92"/><path d="M95.16,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,92.46,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,79.9,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,87.44,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Zm11.1,5.87-3.62-7.39h-1.71v7.39h-5V0H104a7.42,7.42,0,0,1,3,.55A6.71,6.71,0,0,1,109.21,2,6.08,6.08,0,0,1,110.55,4,6.27,6.27,0,0,1,111,6.39a5.38,5.38,0,0,1-.31,1.85,6.94,6.94,0,0,1-.78,1.5,6.4,6.4,0,0,1-1.06,1.13,7.79,7.79,0,0,1-1.19.75l4.45,8.29h-5.87ZM106,6.36a2,2,0,0,0-.57-1.4,2.15,2.15,0,0,0-1.6-.63H101v4h2.84a2,2,0,0,0,1.6-.63A1.86,1.86,0,0,0,106,6.36Zm22.35,6.93a7.07,7.07,0,0,1-4.77,6.84,9,9,0,0,1-3,.52,8.66,8.66,0,0,1-3-.52,7.14,7.14,0,0,1-2.45-1.47,7,7,0,0,1-2.27-5.37V0h5V13.17a3.14,3.14,0,0,0,.7,2.22,2.54,2.54,0,0,0,2,.77,2.7,2.7,0,0,0,2-.77,3.07,3.07,0,0,0,.72-2.22V0h5V13.3Z"/><polygon points="141.81 19.92 135.45 9.9 135.45 19.92 130.57 19.92 130.57 0 134.83 0 141.19 10.02 141.19 0 146.07 0 146.07 19.92 141.81 19.92"/><path d="M163.77,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,161.07,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,148.51,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,156.05,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="174.94 19.92 174.94 12.03 169.57 12.03 169.57 19.92 164.51 19.92 164.51 0 169.57 0 169.57 7.66 174.94 7.66 174.94 0 180 0 180 19.92 174.94 19.92"/></g>
+    </svg>
+    <div class="op-client-name" id="opClient">Návrh spolupráce</div>
+  </div>
+
+  <!-- Cover -->
+  <div class="op-cover" id="opCover">
+    <div class="op-cover-ph" id="opCoverPh">Vyberte cover fotku</div>
+    <img id="opCoverImg" style="display:none">
+    <div class="op-cover-caption">
+      <div class="op-cover-tag">Mediální partnerství</div>
+      <div class="op-cover-title" id="opCollabTitle">Nadpis spolupráce</div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="op-body">
+    <div class="op-section-head-large" id="opCampHeading">Detail kampaně</div>
+    <div class="op-camp-grid" id="opCampGrid">
+      <div class="op-camp-col" id="opCampDescCol">
+        <div class="op-camp-label">Popis kampaně</div>
+        <div class="op-camp-text" id="opCampDesc"></div>
+      </div>
+      <div class="op-camp-col" id="opTargetGroupCol">
+        <div class="op-camp-label">Cílová skupina</div>
+        <div class="op-camp-text" id="opTargetGroup"></div>
+      </div>
+      <div class="op-camp-col" id="opTimingCol">
+        <div class="op-camp-label">Timing</div>
+        <div class="op-camp-text" id="opTiming"></div>
+      </div>
+    </div>
+
+    <div class="op-section-head">Produkty</div>
+  </div>
+
+  <!-- Products -->
+  <div class="op-products" id="opProducts"></div>
+
+  <!-- Value bar -->
+  <div class="op-value-bar">
+    <div id="opValueLeft" style="display:flex;flex-direction:column;gap:4px">
+      <div class="op-value-label">Celková hodnota<br>spolupráce</div>
+    </div>
+    <div id="opValueRight" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <div class="op-value-amount" id="opTotalValue">—</div>
+      <div class="op-value-special" id="opSpecialPrice" style="display:none">
+        <div class="op-value-special-label">Cena pro vás</div>
+        <div class="op-value-special-amount" id="opSpecialAmount"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quote -->
+  <div class="op-quote">
+    <div class="op-quote-text">Naším cílem je, aby otevření CC.cz bylo mezi prvními kroky, které člověk udělá, když si každé ráno vezme do ruky telefon nebo počítač.</div>
+    <div class="op-quote-author">— Michal Ptáček, Founder &amp; CEO CzechCrunche</div>
+  </div>
+
+  <!-- CC Tip – fixed section -->
+  <div class="op-cctip">
+    <div class="op-cctip-left">
+      <div class="op-cctip-badge">CC TIP</div>
+      <div class="op-cctip-title">Podpořte dopad vašeho&nbsp;PR</div>
+      <div class="op-cctip-desc">Zapojte mediální formáty CC do svých kampaní a posilte dosah i důvěru u vašeho publika.</div>
+    </div>
+    <div class="op-cctip-right">
+      <img src="photos/cc-tip-mockup-new.jpg" alt="CC mediální formáty">
+    </div>
+  </div>
+
+  <!-- Contact – Těším se na spolupráci -->
+  <div class="op-contact" id="opContact">
+    <div>
+      <div class="op-contact-title">Těším se na spolupráci</div>
+      <div class="op-contact-details" id="opContactDetails"></div>
+      <div class="op-contact-web">www.cc.cz</div>
+    </div>
+    <img src="photos/crunch-mode.png" alt="Crunch Mode" style="height:36px;width:auto;opacity:.9">
+  </div>
+
+  <!-- Footer -->
+  <div class="op-footer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 20.66" width="70" height="8">
+      <g fill="#ffffff"><path d="M15.49,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,12.79,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7A5.93,5.93,0,0,1,.85,16.65a8.62,8.62,0,0,1-.62-2A14.26,14.26,0,0,1,0,12.56c0-.75,0-1.49,0-2.24S0,8.81,0,8.09A11.52,11.52,0,0,1,.23,6,8.23,8.23,0,0,1,.85,4,5.61,5.61,0,0,1,2.08,2.29,7.69,7.69,0,0,1,4.58.59,8.22,8.22,0,0,1,7.77,0,8.55,8.55,0,0,1,10.5.41a6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93H10.4a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="15.49 19.92 15.49 16.13 23.41 4.37 15.83 4.37 15.83 0 29.51 0 29.51 3.79 21.56 15.55 29.51 15.55 29.51 19.92 15.49 19.92"/><polygon points="30.25 19.89 30.25 0 44.26 0 44.26 4.37 35.32 4.37 35.32 7.7 42.96 7.7 42.96 12.07 35.32 12.07 35.32 15.55 44.26 15.55 44.26 19.92 30.25 19.92 30.25 19.89"/><path d="M61.23,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,58.53,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,46,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,53.51,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29A13.1,13.1,0,0,0,51,14.05a4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="72.4 19.92 72.4 12.03 67.03 12.03 67.03 19.92 61.97 19.92 61.97 0 67.03 0 67.03 7.66 72.4 7.66 72.4 0 77.46 0 77.46 19.92 72.4 19.92"/><path d="M95.16,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,92.46,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,79.9,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,87.44,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Zm11.1,5.87-3.62-7.39h-1.71v7.39h-5V0H104a7.42,7.42,0,0,1,3,.55A6.71,6.71,0,0,1,109.21,2,6.08,6.08,0,0,1,110.55,4,6.27,6.27,0,0,1,111,6.39a5.38,5.38,0,0,1-.31,1.85,6.94,6.94,0,0,1-.78,1.5,6.4,6.4,0,0,1-1.06,1.13,7.79,7.79,0,0,1-1.19.75l4.45,8.29h-5.87ZM106,6.36a2,2,0,0,0-.57-1.4,2.15,2.15,0,0,0-1.6-.63H101v4h2.84a2,2,0,0,0,1.6-.63A1.86,1.86,0,0,0,106,6.36Zm22.35,6.93a7.07,7.07,0,0,1-4.77,6.84,9,9,0,0,1-3,.52,8.66,8.66,0,0,1-3-.52,7.14,7.14,0,0,1-2.45-1.47,7,7,0,0,1-2.27-5.37V0h5V13.17a3.14,3.14,0,0,0,.7,2.22,2.54,2.54,0,0,0,2,.77,2.7,2.7,0,0,0,2-.77,3.07,3.07,0,0,0,.72-2.22V0h5V13.3Z"/><polygon points="141.81 19.92 135.45 9.9 135.45 19.92 130.57 19.92 130.57 0 134.83 0 141.19 10.02 141.19 0 146.07 0 146.07 19.92 141.81 19.92"/><path d="M163.77,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,161.07,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,148.51,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,156.05,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="174.94 19.92 174.94 12.03 169.57 12.03 169.57 19.92 164.51 19.92 164.51 0 169.57 0 169.57 7.66 174.94 7.66 174.94 0 180 0 180 19.92 174.94 19.92"/></g>
+    </svg>
+  </div>
+
+</div><!-- .op -->
+</div><!-- .preview-wrap -->
+
+<script>
+// ════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════
+const PHOTOS = [
+  { file:'photos/czechcrunch-1000359.jpg', label:'People First — panel' },
+  { file:'photos/czechcrunch-1000461.jpg', label:'Superdiskuze' },
+  { file:'photos/czechcrunch-1000176.jpg', label:'Publikum — konference' },
+  { file:'photos/czechcrunch-1000198.jpg', label:'Publikum — velký sál' },
+  { file:'photos/czechcrunch-1000199.jpg', label:'Publikum — aplaus' },
+  { file:'photos/czechcrunch-1000471.jpg', label:'Superdiskuze wide' },
+  { file:'photos/czechcrunch-1000001.jpg', label:'People First — floor' },
+  { file:'photos/czechcrunch-1000008.jpg', label:'CC banner — vstup' },
+  { file:'photos/czechcrunch-1000099.jpg', label:'Networking' },
+  { file:'photos/czechcrunch-1000158.jpg', label:'Networking — ženy' },
+  { file:'photos/czechcrunch-1000564.jpg', label:'Rooftop networking' },
+  { file:'photos/czechcrunch-1000630.jpg', label:'Networking — muži' },
+  { file:'photos/czechcrunch-1000255.jpg', label:'Panel — Gen X vs Z' },
+  { file:'photos/czechcrunch-1000295.jpg', label:'Řečník s mikrofonem' },
+  { file:'photos/czechcrunch-1000101.jpg', label:'Akreditace' },
+  { file:'photos/czechcrunch-1000518.jpg', label:'Catering' },
+  { file:'photos/czechcrunch-1000505.jpg', label:'Partner — Frumost' },
+  { file:'photos/czechcrunch-1000522.jpg', label:'Partner — JZT' },
+  { file:'photos/czechcrunch-1000528.jpg', label:'Partner booth' },
+  { file:'photos/czechcrunch-1000589.jpg', label:'Event detail' },
+];
+
+
+// ════════════════════════════════════════════════
+// PRODUCT PRESETS (z mediakitu)
+// ════════════════════════════════════════════════
+const PRODUCT_PRESETS = [
+  // Články
+  { id:'premium-article', cat:'Články', name:'Premium článek',
+    desc:'Exkluzivní formát s fotogalerií, který je ideální pro komunikaci klíčových témat a osobností. Nabízí nejvyšší viditelnost díky garanci 24 hodin v horní části homepage a extra propagaci na sociálních sítích.',
+    photo:'photos/preset-clanek-premium.jpg', hodnoty:'', dosahy:'', price:'140 000 Kč bez DPH' },
+  { id:'cc-native', cat:'Články', name:'Native článek',
+    desc:'Článek o firmě či produktu zpracovaný nativní formou, která vykazuje vyšší účinnost a dočtenost než klasická inzerce. Obsah je podpořen extra zvýrazněním na webu a placenou kampaní na sociálních sítích.',
+    photo:'photos/preset-clanek-native.jpg', hodnoty:'', dosahy:'', price:'100 000 Kč bez DPH' },
+  { id:'brandstory', cat:'Články', name:'Brandstory článek',
+    desc:'Formát určený pro publikaci vlastních textů či tiskových zpráv klienta, u kterých redakce provádí pouze korekturu a vizuální úpravu. Článek je trvale zveřejněn ve vyhrazeném boxu na hlavní stránce.',
+    photo:'photos/preset-clanek-brandstory.jpg', hodnoty:'', dosahy:'', price:'80 000 Kč bez DPH' },
+  // Bannery
+  { id:'branding-banner', cat:'Bannery', name:'Branding Banner',
+    desc:'Banner v horní části a po stranách homepage i všech podstránek webu.',
+    hodnoty:'Pozice: top + levá a pravá strana (web), leaderboard (mobil)\nAž 3 různé vizuály s rotací\nFunguje i s AdBlockem',
+    dosahy:'Neexkluzivně: až 800 000 impresí/měsíc\nExkluzivně: až 1 600 000 impresí/měsíc\nPrůměrné CTR: až 1,2 %',
+    price:'250 000 Kč bez DPH / 30 dní' },
+  { id:'square-top', cat:'Bannery', name:'Square Top Banner',
+    desc:'Banner po druhém odstavci každého článku na CC.cz.',
+    hodnoty:'Formát: 672 × 560 px\nAž 3 různé vizuály s rotací\nFunguje i s AdBlockem',
+    dosahy:'Neexkluzivně: až 500 000 impresí/měsíc\nExkluzivně: až 1 200 000 impresí/měsíc\nPrůměrné CTR: až 2,5 %',
+    price:'160 000 Kč bez DPH / 30 dní' },
+  { id:'rectangle-video', cat:'Bannery', name:'Gallery Banner',
+    desc:'Čtvercový/rectangle formát banneru v galerii fotografií na webu, který vyniká vysokým počtem impresí na váš brand.',
+    hodnoty:'Formát: 1 080 × 720 px\nDélka videa: až 30 sekund\nVolitelný zvuk (kliknutím)\nAž 3 různé vizuály',
+    dosahy:'Neexkluzivně: až 500 000 impresí/měsíc\nExkluzivně: až 1 200 000 impresí/měsíc\nPrůměrné CTR: až 2,5 %',
+    price:'140 000 Kč bez DPH / 30 dní' },
+  { id:'square-bottom', cat:'Bannery', name:'Square Bottom Banner',
+    desc:'Banner na konci každého článku na CC.cz.',
+    hodnoty:'Formát: 672 × 560 px\nAž 3 různé vizuály s rotací\nFunguje i s AdBlockem',
+    dosahy:'Neexkluzivně: až 400 000 impresí/měsíc\nExkluzivně: až 1 200 000 impresí/měsíc\nPrůměrné CTR: až 2 %',
+    price:'' },
+  { id:'interscroller', cat:'Bannery', name:'Interscroller Banner',
+    desc:'Banner v mobilním zobrazení umístěný uprostřed každého článku, který se scrolluje spolu s obsahem stránky, a fixní formát v pravém sloupci na desktopu.',
+    hodnoty:'Formát: 672 × 800 px (mobil), 672 × 560 px (desktop)\nAž 3 různé vizuály\nFunguje i s AdBlockem',
+    dosahy:'Neexkluzivně: až 500 000 impresí/měsíc\nExkluzivně: až 1 000 000 impresí/měsíc\nPrůměrné CTR: až 2 %',
+    price:'180 000 Kč bez DPH / 30 dní' },
+  // Podcasty
+  { id:'podcast-moneymaker', cat:'Podcasty', name:'Money Maker Podcast',
+    desc:'Podcast s nejzajímavějšími osobnostmi české byznysové a startupové scény.',
+    photo:'photos/preset-podcast-moneymaker.jpg', hodnoty:'1× týdně, délka 50–60 minut\nReadout a vizuální promo v podcastu\nBranding v doprovodném článku\nTextová propagace na platformách\nMožnost dlouhodobého partnerství (3–12 měsíců)',
+    dosahy:'Max. 2 partneři na epizodu', price:'od 20 000 Kč bez DPH / díl' },
+  { id:'podcast-brandstories', cat:'Podcasty', name:'BrandStories Podcast',
+    desc:'Podcast, který představuje zákulisí firem, jejich know-how, vize a klíčové osobnosti.',
+    photo:'photos/preset-podcast-brandstories.jpg', hodnoty:'1× týdně, délka 35–45 minut\nStudioová produkce dle podkladů klienta\nDistribuce na YouTube a všech podcastových platformách\nCC sociální sítě\nDoprovodný nativní článek',
+    dosahy:'YouTube: 10 000+ odběratelů\nCC sociální sítě: 180 000+ sledujících', price:'160 000 Kč bez DPH' },
+  { id:'podcast-rezim', cat:'Podcasty', name:'Režim Nerušit Podcast',
+    desc:'Evelína Beníšková z CC probírá témata, která řeší hlavně mladí Češi a Češky, ale ovlivňují celou společnost. Popkultura, trendy, škola, byznys, postironie, móda, řemeslo i závislosti.',
+    photo:'photos/preset-podcast-rezim.png', hodnoty:'', dosahy:'', price:'od 15 000 Kč bez DPH / díl' },
+  { id:'podcast-michal', cat:'Podcasty', name:'Michal Ptáček Podcast',
+    desc:'Lifestylový podcast zakladatele CzechCrunche Michala Ptáčka o byznysu, životě, longevity a technologiích.',
+    photo:'photos/preset-podcast-michal.jpg', hodnoty:'', dosahy:'', price:'od 15 000 Kč bez DPH / díl' },
+  // Newslettery
+  { id:'newsletter-weekly', cat:'Newslettery', name:'Weekly Newsletter',
+    desc:'Nedělní souhrn nejzajímavějších článků a zásadních rozhovorů. Všechno, co by vám na CC nemělo utéct.',
+    photo:'photos/preset-newsletter-weekly.jpg', hodnoty:'Banner a krátká zpráva v newsletteru\nZveřejnění v nedělním článku na LinkedIn\nMožnost exkluzivního partnerství',
+    dosahy:'7 500+ odběratelů newsletteru\nLinkedIn: 22 000+ sledujících', price:'od 45 000 Kč bez DPH / vydání' },
+  { id:'newsletter-goodgame', cat:'Newslettery', name:'Good Game Newsletter',
+    desc:'Týdenní newsletter pro fanoušky herního průmyslu přinášející příběhy, novinky a tipy od osobností ze světa gamingu.',
+    photo:'photos/preset-newsletter-goodgame.jpg', hodnoty:'', dosahy:'', price:'od 10 000 Kč bez DPH / vydání' },
+  { id:'newsletter-mmrecap', cat:'Newslettery', name:'MM Recap Newsletter',
+    desc:'Vysvětlujeme, co se děje ve světě investic a peněz — a jak si v tom udělat jasno.',
+    photo:'photos/preset-newsletter-mmrecap.jpg', hodnoty:'', dosahy:'', price:'od 20 000 Kč bez DPH / vydání' },
+  { id:'newsletter-startup', cat:'Newslettery', name:'Startup Newsletter',
+    desc:'V newsletteru Startup vám každý měsíc ukážeme vše důležité ze světa českých startupů včetně přehledu veškerých investic.',
+    photo:'photos/preset-newsletter-startup.jpg', hodnoty:'', dosahy:'', price:'od 20 000 Kč bez DPH / vydání' },
+  { id:'newsletter-deli', cat:'Newslettery', name:'Deli Newsletter',
+    desc:'Gastro průvodce doporučující nové restaurace, bary a bistra pro foodie nadšence, kteří rádi objevují nová místa a kulinářské eventy.',
+    photo:'photos/preset-newsletter-deli.jpg', hodnoty:'', dosahy:'', price:'od 20 000 Kč bez DPH / vydání' },
+  // Eventy
+  { id:'event-longevity', cat:'Eventy', name:'Longevity Festival', desc:'Vzdělávání, které chutná, hýbe a inspiruje. Jeden event, v rámci kterého si účastníci principy dlouhověkosti vyzkouší na vlastní kůži prostřednictvím ochutnávek, testů a interaktivních aktivit a zároveň získají inspiraci od špičkových speakerů. Event nabízí partnerům unikátní možnost přímého zapojení do programu, posílení značky v kontextu zdraví a kvality života a viditelnost v prémiovém obsahu CzechCrunche.', hodnoty:'', dosahy:'' },
+  { id:'event-future', cat:'Eventy', name:'FUTURE', desc:'Technologie. Umělá inteligence. Byznys. Kreativita.\nDesítky osobností, stovky návštěvníků, nabitý půldenní program. CzechCrunch Future ukáže budoucnost na jednom místě.', photo:'photos/preset-event-future.jpg', hodnoty:'', dosahy:'' },
+  { id:'event-mmbrno', cat:'Eventy', name:'Money Maker Brno', desc:'Odpoledne a večer plné rozhovorů, přednášek, panelových diskuzí a networkingu. Na pódiu vystoupí top podnikatelé a podnikatelky, kteří jsou lokálními patrioty, ale zároveň už dávno hranice regionu překročili – svou prací, úsilím, vlivem či úspěchem. Všechny je spojuje, že jsou inspirací pro ostatní. A takový je i Money Maker, inspirace pro váš byznys a vaše investice.', photo:'photos/preset-event-mmbrno.jpg', hodnoty:'', dosahy:'' },
+  { id:'event-ccx', cat:'Eventy', name:'CzechCrunch X', desc:'Neformální večer s jasným cílem – propojit gamechangery, kteří hýbou děním v Česku i zahraničí a mění zaběhlá pravidla napříč všemi obory.', hodnoty:'', dosahy:'' },
+  { id:'event-peoplefirst', cat:'Eventy', name:'People First', desc:'Naše pravidelná série eventů pro ty, kdo věří, že spokojení lidé budují skvělé firmy. Inspirace moderními trendy v oblasti péče o zaměstnance, náboru a firemních benefitů. Zaměřujeme se na aktuální témata, která podporují efektivní budování týmů a pozitivní firemní kultury.', photo:'photos/preset-event-peoplefirst.jpg', hodnoty:'', dosahy:'' },
+  { id:'event-mm-dinner', cat:'Eventy', name:'Money Maker Exclusive Dinner', desc:'Zahájení největší investiční a byznysové konference Money Maker proběhne formou neformálního večera, kde se propojují lidé, nápady a obchodní příležitosti. V prostředí s kvalitním jídlem, prémiovými drinky a lehkým doprovodným programem vznikne ideální atmosféra pro navazování nových kontaktů i prohlubování těch stávajících.', hodnoty:'', dosahy:'' },
+  { id:'event-mm', cat:'Eventy', name:'Money Maker', desc:'Dvě stage. Desítky řečníků. Expo i workshopy. To je Money Maker. Akce pro všechny, kdo chtějí uspět v investicích a byznysu – se špičkovými investory, podnikateli i lídry.', photo:'photos/preset-event-mm.jpg', hodnoty:'', dosahy:'' },
+  // Speciály
+];
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+const CONTACTS = {
+  vaclav:  { name: 'Václav Bedřich',      email: 'vaclav@cc.cz',              phone: '+420 776 330 344' },
+  martina: { name: 'Martina Sirotková',   email: 'martina@cc.cz',             phone: '+420 733 279 235' },
+  jitka:   { name: 'Jitka Beranová',      email: 'jitka@cc.cz',               phone: '+420 724 014 889' },
+  hana:    { name: 'Hana Tomaševičová',   email: 'hana.tomasevicova@cc.cz',   phone: '+420 608 952 852' },
+  lucie:   { name: 'Lucie Slavíková',     email: 'lucie.slavikova@cc.cz',     phone: '+420 774 880 308' },
+};
+
+let mainPhoto     = null;
+let teamPhoto     = null;
+let products      = [];   // [{id, photo, name, desc, hodnoty, dosahy}]
+let uploadedPhotos = [];
+let hiddenBuiltin  = new Set();
+let photoTarget   = null; // 'main' | 'team' | productId
+let activeFolder  = 'nejnovejsi';
+let productCounter = 0;
+
+const LS_UPLOADED = 'cc_uploaded_photos';
+const LS_HIDDEN   = 'cc_hidden_builtin';
+const FOLDER_LABELS = { nejnovejsi:'Nejnovější', covers:'Produkty', eventy:'Eventy', tym:'Tým fotky' };
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+function loadStorage() {
+  try {
+    uploadedPhotos = JSON.parse(localStorage.getItem(LS_UPLOADED) || '[]');
+    hiddenBuiltin  = new Set(JSON.parse(localStorage.getItem(LS_HIDDEN) || '[]'));
+  } catch(e) { uploadedPhotos = []; hiddenBuiltin = new Set(); }
+}
+
+function saveStorage() {
+  localStorage.setItem(LS_UPLOADED, JSON.stringify(uploadedPhotos));
+  localStorage.setItem(LS_HIDDEN,   JSON.stringify([...hiddenBuiltin]));
+}
+
+loadStorage();
+switchFolder('nejnovejsi');
+update();
+
+// ════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.sb-tab').forEach((t, i) =>
+    t.classList.toggle('active', ['form','photos'][i] === name));
+  document.querySelectorAll('.sb-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+
+// ════════════════════════════════════════════════
+// PHOTO PICKER
+// ════════════════════════════════════════════════
+function removeProductPhoto(id) {
+  const p = products.find(x => x.id === id);
+  if (p) { p.photo = null; renderProductCards(); saveStorage(); update(); }
+}
+
+function openPhotoPicker(target) {
+  photoTarget = target;
+  const banner = document.getElementById('photoTargetBanner');
+  const label  = document.getElementById('photoTargetLabel');
+  if (target === 'main') {
+    label.textContent = '📷 Vybíráš hlavní cover fotku';
+  } else if (target === 'team') {
+    label.textContent = '📷 Vybíráš fotku týmu';
+  } else {
+    const p = products.find(x => x.id === target);
+    label.textContent = '📷 Vybíráš fotku pro: ' + (p && p.name ? p.name : 'produkt');
+  }
+  banner.classList.add('visible');
+  switchTab('photos');
+}
+
+function cancelPhotoPicker() {
+  photoTarget = null;
+  document.getElementById('photoTargetBanner').classList.remove('visible');
+  switchTab('form');
+}
+
+function assignPhoto(target, src) {
+  if (target === 'main') {
+    mainPhoto = src;
+    const img = document.getElementById('mainCoverImg');
+    img.src = src;
+    img.style.display = 'block';
+  } else if (target === 'team') {
+    teamPhoto = src;
+    const img = document.getElementById('teamCoverImg');
+    if (img) { img.src = src; img.style.display = 'block'; }
+  } else {
+    const p = products.find(x => x.id === target);
+    if (p) {
+      p.photo = src;
+      renderProductCards();
+    }
+  }
+  update();
+}
+
+// ════════════════════════════════════════════════
+// PHOTO BANK
+// ════════════════════════════════════════════════
+function switchFolder(name) {
+  activeFolder = name;
+  document.querySelectorAll('.folder-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('ftab-' + name);
+  if (tab) tab.classList.add('active');
+  const lbl = document.getElementById('uploadFolderLabel');
+  if (lbl) lbl.textContent = 'Nejnovější';
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  const newestPhotos = uploadedPhotos.filter(p => p.folder === 'nejnovejsi').slice().reverse();
+
+  const el = id => document.getElementById(id);
+  if (el('fc-nejnovejsi')) el('fc-nejnovejsi').textContent = newestPhotos.length;
+
+  const grid = el('photoGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const items    = newestPhotos.map(p => ({ ...p, builtin: false }));
+  const emptyMsg = 'Zatím žádné fotky. Přidej je tlačítkem níže.';
+
+  if (items.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'photo-empty'; d.textContent = emptyMsg;
+    grid.appendChild(d); return;
+  }
+
+  // Determine active src for this target
+  let activeSrc = null;
+  if (photoTarget === 'main') activeSrc = mainPhoto;
+  else if (photoTarget === 'team') activeSrc = teamPhoto;
+  else if (photoTarget) {
+    const p = products.find(x => x.id === photoTarget);
+    activeSrc = p ? p.photo : null;
+  }
+
+  items.forEach(ph => {
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb' + (activeSrc === ph.src ? ' active' : '');
+
+    const img = document.createElement('img');
+    img.src = ph.src; img.loading = 'lazy';
+    thumb.appendChild(img);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'thumb-overlay';
+
+    const check = document.createElement('span');
+    check.className = 'thumb-check';
+    check.textContent = activeSrc === ph.src ? '✓' : '';
+    overlay.appendChild(check);
+
+    const del = document.createElement('button');
+    del.className = 'thumb-del'; del.textContent = '✕'; del.title = 'Smazat';
+    del.dataset.action = 'delete'; del.dataset.id = ph.id; del.dataset.builtin = ph.builtin ? '1' : '0';
+    overlay.appendChild(del);
+
+    if (!ph.builtin) {
+      const moveWrap = document.createElement('div');
+      moveWrap.className = 'thumb-move';
+      ['nejnovejsi','covers','tym'].filter(f => f !== ph.folder).forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'thumb-move-btn';
+        btn.textContent = '→ ' + FOLDER_LABELS[f];
+        btn.dataset.action = 'move'; btn.dataset.id = ph.id; btn.dataset.folder = f;
+        moveWrap.appendChild(btn);
+      });
+      overlay.appendChild(moveWrap);
+    }
+
+    thumb.appendChild(overlay);
+
+    thumb.addEventListener('click', e => {
+      const action = e.target.closest('[data-action]');
+      if (action) {
+        e.stopPropagation();
+        if (action.dataset.action === 'delete') deletePhoto(ph.id, ph.builtin);
+        else if (action.dataset.action === 'move') movePhoto(ph.id, action.dataset.folder);
+      } else {
+        // select photo
+        if (photoTarget) {
+          assignPhoto(photoTarget, ph.src);
+          cancelPhotoPicker();
+        } else {
+          // no target – just preview (assign to main)
+          assignPhoto('main', ph.src);
+        }
+        renderPhotoGrid();
+      }
+    });
+
+    grid.appendChild(thumb);
+  });
+}
+
+function deletePhoto(id, builtin) {
+  if (!confirm('Smazat tuto fotku z fotobanky?')) return;
+  if (builtin) hiddenBuiltin.add(id);
+  else uploadedPhotos = uploadedPhotos.filter(p => p.id !== id);
+  if (mainPhoto === id) { mainPhoto = null; update(); }
+  products.forEach(p => { if (p.photo === id) { p.photo = null; } });
+  saveStorage(); renderPhotoGrid();
+}
+
+function movePhoto(id, folder) {
+  const p = uploadedPhotos.find(x => x.id === id);
+  if (p) { p.folder = folder; saveStorage(); renderPhotoGrid(); }
+}
+
+function openUpload() {
+  const input = document.getElementById('fileInput');
+  input.value = '';
+  input.onchange = handleUpload;
+  input.click();
+}
+
+function handleUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  const folder = 'nejnovejsi';
+  let pending = files.length, lastSrc = null;
+  files.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      uploadedPhotos.push({ id:'up_'+Date.now()+'_'+idx, src:ev.target.result, label:file.name.replace(/\.[^.]+$/,''), folder });
+      lastSrc = ev.target.result;
+      if (--pending === 0) {
+        saveStorage();
+        switchFolder(folder);
+        if (photoTarget) {
+          assignPhoto(photoTarget, lastSrc);
+          cancelPhotoPicker();
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ════════════════════════════════════════════════
+// PRODUCTS
+// ════════════════════════════════════════════════
+function addProduct() {
+  productCounter++;
+  const id = 'prod_' + Date.now();
+  products.push({ id, photo: null, preset: '', name: '', desc: '', hodnoty: '', dosahy: '', zapojeni: '', price: '' });
+  renderProductCards();
+  update();
+  // auto-open the new card
+  const card = document.querySelector(`.product-card-sb[data-id="${id}"]`);
+  if (card) card.classList.add('open');
+}
+
+function removeProduct(id) {
+  products = products.filter(p => p.id !== id);
+  renderProductCards();
+  update();
+}
+
+function toggleProductCard(id) {
+  const card = document.querySelector(`.product-card-sb[data-id="${id}"]`);
+  if (card) card.classList.toggle('open');
+}
+
+function buildPresetOptions(selectedId) {
+  const cats = {};
+  PRODUCT_PRESETS.forEach(pr => { if (!cats[pr.cat]) cats[pr.cat] = []; cats[pr.cat].push(pr); });
+  let html = `<option value="">— Vybrat typ produktu —</option>`;
+  Object.entries(cats).forEach(([cat, items]) => {
+    html += `<optgroup label="${cat}">`;
+    items.forEach(pr => {
+      html += `<option value="${pr.id}" ${selectedId === pr.id ? 'selected' : ''}>${pr.name}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  return html;
+}
+
+function renderProductCards() {
+  const container = document.getElementById('productCards');
+  container.innerHTML = '';
+  products.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'product-card-sb' + (p._open ? ' open' : '');
+    card.dataset.id = p.id;
+
+    card.innerHTML = `
+      <div class="product-card-head" onclick="toggleProductCard('${p.id}')">
+        <span class="product-card-head-title">${p.name || 'Produkt ' + (i+1)}</span>
+        <span class="product-card-toggle">▾</span>
+      </div>
+      <div class="product-card-body">
+        <div class="field">
+          <label class="lbl">Typ produktu</label>
+          <select onchange="applyProductPreset('${p.id}', this.value)" style="width:100%;padding:7px 9px;border:1px solid var(--g200);border-radius:6px;font-size:12px;background:var(--g50);color:var(--black);font-family:'Inter',sans-serif">
+            ${buildPresetOptions(p.preset)}
+          </select>
+        </div>
+        <div class="product-cover-pick" onclick="openPhotoPicker('${p.id}')">
+          ${p.photo ? `<img src="${p.photo}">` : ''}
+          <span class="product-cover-label">📷 ${p.photo ? 'Změnit fotku' : 'Vybrat fotku'}</span>
+          ${p.photo ? `<button class="product-cover-remove" title="Odebrat fotku" onclick="event.stopPropagation();removeProductPhoto('${p.id}')">×</button>` : ''}
+        </div>
+        <div class="field">
+          <label class="lbl">Název produktu</label>
+          <input type="text" value="${esc(p.name)}" placeholder="např. Newsletter Premium"
+            oninput="updateProduct('${p.id}','name',this.value)">
+        </div>
+        <div class="field">
+          <label class="lbl">Popis</label>
+          <div class="ta-wrap">
+            <button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button>
+            <textarea id="desc_${p.id}" class="bullet-ta" placeholder="Co produkt zahrnuje…" oninput="updateProduct('${p.id}','desc',this.value)">${esc(p.desc)}</textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">Specifikace</label>
+          <div class="ta-wrap">
+            <button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button>
+            <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="Specifikace produktu…" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">Dosahy <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
+          <div class="ta-wrap">
+            <button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button>
+            <textarea id="dosahy_${p.id}" class="bullet-ta" placeholder="Dosah produktu…" oninput="updateProduct('${p.id}','dosahy',this.value)">${esc(p.dosahy)}</textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="lbl">Částka <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
+          <input type="text" value="${esc(p.price)}" placeholder="např. 100 000 Kč bez DPH" oninput="updateProduct('${p.id}','price',this.value)">
+        </div>
+        <button class="product-del-btn" onclick="removeProduct('${p.id}')">Odebrat produkt</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function applyProductPreset(id, presetId) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  p.preset = presetId;
+  if (presetId) {
+    const pr = PRODUCT_PRESETS.find(x => x.id === presetId);
+    if (pr) {
+      p.name    = pr.name;
+      p.desc    = pr.desc;
+      p.hodnoty = pr.hodnoty;
+      if (pr.price !== undefined) p.price = pr.price;
+      if (pr.photo) p.photo = pr.photo;
+    }
+  }
+  renderProductCards();
+  // re-open the card
+  const card = document.querySelector(`.product-card-sb[data-id="${id}"]`);
+  if (card) card.classList.add('open');
+  update();
+}
+
+function updateProduct(id, field, value) {
+  const p = products.find(x => x.id === id);
+  if (p) { p[field] = value; }
+  // re-render just the header title if name changed
+  if (field === 'name') {
+    const head = document.querySelector(`.product-card-sb[data-id="${id}"] .product-card-head-title`);
+    if (head) head.textContent = value || 'Produkt';
+  }
+  update();
+}
+
+// ════════════════════════════════════════════════
+// TIPS
+// ════════════════════════════════════════════════
+function applyContactPreset(key) {
+  const c = CONTACTS[key];
+  if (!c) return;
+  setField('contactName',  c.name);
+  setField('contactEmail', c.email);
+  setField('contactPhone', c.phone);
+  update();
+}
+
+
+// ════════════════════════════════════════════════
+// UPDATE (live preview)
+// ════════════════════════════════════════════════
+function update() {
+  // Header
+  setText('opClient', getField('clientName') || 'Návrh spolupráce');
+
+  // Cover
+  const img = document.getElementById('opCoverImg');
+  const ph  = document.getElementById('opCoverPh');
+  if (mainPhoto) { img.src = mainPhoto; img.style.display = 'block'; ph.style.display = 'none'; }
+  else           { img.style.display = 'none'; ph.style.display = 'flex'; }
+
+  // Collab title on cover
+  setText('opCollabTitle', getField('collabTitle') || 'Nadpis spolupráce');
+
+  // Campaign detail — optional cols
+  const campDesc    = getField('campDesc');
+  const targetGroup = getField('targetGroup');
+  const timing      = getField('timing');
+
+  setHtml('opCampDesc',    renderText(campDesc));
+  setHtml('opTargetGroup', renderText(targetGroup));
+  setHtml('opTiming',      renderText(timing));
+
+  document.getElementById('opCampDescCol').style.display    = campDesc    ? '' : 'none';
+  document.getElementById('opTargetGroupCol').style.display = targetGroup ? '' : 'none';
+  document.getElementById('opTimingCol').style.display      = timing      ? '' : 'none';
+
+  const anyCamp = campDesc || targetGroup || timing;
+  document.getElementById('opCampHeading').style.display = anyCamp ? '' : 'none';
+  document.getElementById('opCampGrid').style.display    = anyCamp ? '' : 'none';
+
+  // Auto-sum product prices into totalValue
+  const pricedProducts = products.filter(p => p.price && p.price.trim());
+  if (pricedProducts.length > 0) {
+    const sum = pricedProducts.reduce((acc, p) => {
+      const num = parseInt(p.price.replace(/\D/g, ''), 10);
+      return acc + (isNaN(num) ? 0 : num);
+    }, 0);
+    if (sum > 0) {
+      const formatted = sum.toLocaleString('cs-CZ') + ' Kč bez DPH';
+      const totalInput = document.getElementById('totalValue');
+      if (totalInput && totalInput.value !== formatted) {
+        totalInput.value = formatted;
+      }
+    }
+  }
+
+  // Products
+  const opProducts = document.getElementById('opProducts');
+  opProducts.innerHTML = '';
+  if (products.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding: 0 40px 28px; font-size:12px; color:#ccc;';
+    empty.textContent = 'Přidej produkt tlačítkem ve formuláři vlevo.';
+    opProducts.appendChild(empty);
+  } else {
+    products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'op-product';
+
+      // Photo column
+      const photoCol = document.createElement('div');
+      photoCol.className = 'op-product-photo';
+      if (p.photo) {
+        const pImg = document.createElement('img');
+        pImg.src = p.photo;
+        photoCol.appendChild(pImg);
+      } else {
+        const pPh = document.createElement('div');
+        pPh.className = 'op-product-photo-ph';
+        pPh.textContent = 'Fotka produktu';
+        photoCol.appendChild(pPh);
+      }
+
+      // Details column
+      const details = document.createElement('div');
+      details.className = 'op-product-details';
+
+      const name = document.createElement('div');
+      name.className = 'op-product-name';
+      name.textContent = p.name || 'Název produktu';
+      details.appendChild(name);
+
+      if (p.desc) {
+        const desc = document.createElement('div');
+        desc.className = 'op-product-desc';
+        desc.innerHTML = renderText(p.desc);
+        details.appendChild(desc);
+      }
+
+
+      const hasZap   = p.zapojeni && p.zapojeni.trim();
+      const hasDos   = p.dosahy && p.dosahy.trim();
+      const hasPrice = p.price && p.price.trim();
+
+      if (hasZap || hasDos || hasPrice) {
+        const row = document.createElement('div');
+        row.className = 'op-product-bottom-row';
+
+        if (hasZap) {
+          const zap = document.createElement('div');
+          zap.className = 'op-product-zapojeni';
+          zap.innerHTML = `<span class="op-product-zapojeni-label">Detail: </span>${renderText(p.zapojeni)}`;
+          row.appendChild(zap);
+        } else {
+          row.appendChild(document.createElement('div')); // placeholder
+        }
+
+        if (hasDos) {
+          const dos = document.createElement('div');
+          dos.className = 'op-product-zapojeni';
+          dos.innerHTML = `<span class="op-product-zapojeni-label">Dosahy: </span>${renderText(p.dosahy)}`;
+          row.appendChild(dos);
+        } else {
+          row.appendChild(document.createElement('div'));
+        }
+
+        if (hasPrice) {
+          const price = document.createElement('div');
+          price.className = 'op-product-price';
+          price.textContent = p.price;
+          row.appendChild(price);
+        }
+
+        details.appendChild(row);
+      }
+
+      card.appendChild(photoCol);
+      card.appendChild(details);
+      opProducts.appendChild(card);
+    });
+  }
+
+  // Value bar
+  const specialPrice = getField('specialPrice');
+  const totalEl      = document.getElementById('opTotalValue');
+  const specialEl    = document.getElementById('opSpecialPrice');
+  const specialAmtEl = document.getElementById('opSpecialAmount');
+  const valueLeft    = document.getElementById('opValueLeft');
+  const valueRight   = document.getElementById('opValueRight');
+
+  setText('opTotalValue', getField('totalValue') || '—');
+
+  if (specialPrice) {
+    // Move striked amount to left column
+    if (!valueLeft.contains(totalEl)) valueLeft.appendChild(totalEl);
+    totalEl.classList.add('striked');
+    specialEl.style.display = 'flex';
+    specialAmtEl.textContent = specialPrice;
+  } else {
+    // Standard amount stays right
+    if (!valueRight.contains(totalEl)) valueRight.insertBefore(totalEl, valueRight.firstChild);
+    totalEl.classList.remove('striked');
+    specialEl.style.display = 'none';
+  }
+
+  // Contact section
+  const contactDetails = document.getElementById('opContactDetails');
+  if (contactDetails) {
+    const name  = getField('contactName');
+    const email = getField('contactEmail');
+    const phone = getField('contactPhone');
+    let html = '';
+    if (name)  html += `<div style="font-weight:600;color:#111">${escHtml(name)}</div>`;
+    if (email) html += `<div>${escHtml(email)}</div>`;
+    if (phone) html += `<div>${escHtml(phone)}</div>`;
+    contactDetails.innerHTML = html;
+  }
+}
+
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function getField(id) { return (document.getElementById(id)?.value || '').trim(); }
+function setField(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
+function setText(id, txt) { const el = document.getElementById(id); if (el) el.textContent = txt; }
+function setHtml(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s) { return escHtml(s); }
+function escAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+// Renders text with bullet support: lines starting with "• " or "- " become <li>
+function renderText(text) {
+  if (!text || !text.trim()) return '—';
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+  lines.forEach(line => {
+    const m = line.match(/^[•\-]\s+(.*)$/);
+    if (m) {
+      if (!inList) { html += '<ul class="op-list">'; inList = true; }
+      html += `<li>${escHtml(m[1])}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      if (line.trim()) html += `<p class="op-text-p">${escHtml(line)}</p>`;
+    }
+  });
+  if (inList) html += '</ul>';
+  return html || '—';
+}
+
+// Insert "• " at cursor in a textarea; if line already has content, prepend bullet
+function insertBullet(id) {
+  const ta = document.getElementById(id);
+  if (!ta) return;
+  ta.focus();
+  const start = ta.selectionStart;
+  const val   = ta.value;
+  // find start of current line
+  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd   = val.indexOf('\n', start);
+  const lineText  = val.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+  let newVal, newCursor;
+  if (lineText.trim() === '') {
+    // empty line — insert bullet
+    newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
+    newCursor = lineStart + 2;
+  } else if (lineText.match(/^[•\-]\s/)) {
+    // already a bullet — remove it
+    newVal    = val.slice(0, lineStart) + lineText.replace(/^[•\-]\s+/, '') + val.slice(lineStart + lineText.length);
+    newCursor = Math.max(lineStart, start - 2);
+  } else {
+    // add bullet to existing line
+    newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
+    newCursor = start + 2;
+  }
+  ta.value = newVal;
+  ta.selectionStart = ta.selectionEnd = newCursor;
+  ta.dispatchEvent(new Event('input'));
+}
+
+// Auto-continue bullet list on Enter
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const ta = e.target;
+  if (!ta.matches('textarea')) return;
+  const val   = ta.value;
+  const start = ta.selectionStart;
+  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+  const currentLine = val.slice(lineStart, start);
+  if (currentLine.match(/^[•\-]\s/)) {
+    // if line is only "• " (empty bullet), remove it and stop list
+    if (currentLine.trim() === '•' || currentLine.trim() === '-') {
+      e.preventDefault();
+      ta.value = val.slice(0, lineStart) + '\n' + val.slice(start);
+      ta.selectionStart = ta.selectionEnd = lineStart + 1;
+    } else {
+      e.preventDefault();
+      const insert = '\n• ';
+      ta.value = val.slice(0, start) + insert + val.slice(start);
+      ta.selectionStart = ta.selectionEnd = start + insert.length;
+    }
+    ta.dispatchEvent(new Event('input'));
+  }
+});
+</script>
+
+</body>
+</html>
