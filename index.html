@@ -429,9 +429,17 @@
       letter-spacing: .02em;
     }
     .op-product-bottom-row {
-      display: grid; grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px; margin-top: 8px; align-items: start;
+      display: grid; grid-template-columns: 1fr 4px 1fr 1fr;
+      gap: 0; margin-top: 8px; align-items: start;
     }
+    .op-product-bottom-row > *:not(.col-resize) { padding: 0 4px; }
+    .col-resize {
+      width: 4px; cursor: col-resize; background: transparent;
+      border-radius: 2px; transition: background .15s; align-self: stretch;
+      min-height: 20px;
+    }
+    .col-resize:hover, .col-resize.dragging { background: var(--g300); }
+    @media print { .col-resize { display: none; } }
 
     /* Value bar */
     .op-value-bar {
@@ -1017,6 +1025,31 @@ function switchTab(name) {
 // ════════════════════════════════════════════════
 // PHOTO PICKER
 // ════════════════════════════════════════════════
+function startColResize(e, row) {
+  e.preventDefault();
+  const handle = e.currentTarget;
+  handle.classList.add('dragging');
+  const startX = e.clientX;
+  const rowW = row.getBoundingClientRect().width;
+  const cols = getComputedStyle(row).gridTemplateColumns.split(' ');
+  const startFr = parseFloat(cols[0]) / (parseFloat(cols[0]) + parseFloat(cols[2]) + parseFloat(cols[3]));
+
+  function onMove(ev) {
+    const dx = ev.clientX - startX;
+    const delta = dx / rowW;
+    let col1 = Math.max(0.15, Math.min(0.7, startFr + delta));
+    const rest = (1 - col1) / 2;
+    row.style.gridTemplateColumns = `${col1}fr 4px ${rest}fr ${rest}fr`;
+  }
+  function onUp() {
+    handle.classList.remove('dragging');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
 function removeProductPhoto(id) {
   const p = products.find(x => x.id === id);
   if (p) { p.photo = null; renderProductCards(); saveStorage(); update(); }
@@ -1463,6 +1496,13 @@ function update() {
         } else {
           row.appendChild(document.createElement('div')); // placeholder
         }
+
+        // resize handle
+        const handle = document.createElement('div');
+        handle.className = 'col-resize';
+        handle.title = 'Táhni pro změnu šířky sloupců';
+        handle.addEventListener('mousedown', e => startColResize(e, row));
+        row.appendChild(handle);
 
         if (hasDos) {
           const dos = document.createElement('div');
