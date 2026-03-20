@@ -430,6 +430,11 @@
       letter-spacing: .02em;
       position: absolute; bottom: 14px; right: 16px;
     }
+    .op-product-url {
+      font-size: 10px; color: var(--g400); margin-top: 6px;
+      word-break: break-all;
+    }
+    .op-product-url a { color: var(--g400); text-decoration: underline; }
     .op-product-bottom-row {
       display: grid; grid-template-columns: 1fr 4px 1fr;
       gap: 0; margin-top: 8px; align-items: start;
@@ -1275,7 +1280,7 @@ function handleUpload(e) {
 function addProduct() {
   productCounter++;
   const id = 'prod_' + Date.now();
-  products.push({ id, photo: null, preset: '', name: '', desc: '', hodnoty: '', dosahy: '', zapojeni: '', price: '' });
+  products.push({ id, photo: null, preset: '', name: '', desc: '', hodnoty: '', dosahy: '', zapojeni: '', price: '', url: '' });
   renderProductCards();
   update();
   // auto-open the new card
@@ -1362,6 +1367,10 @@ function renderProductCards() {
         <div class="field">
           <label class="lbl">Částka <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
           <input type="text" value="${esc(p.price)}" placeholder="např. 100 000 Kč bez DPH" oninput="updateProduct('${p.id}','price',this.value)">
+        </div>
+        <div class="field">
+          <label class="lbl">Odkaz <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
+          <input type="url" value="${esc(p.url||'')}" placeholder="https://…" oninput="updateProduct('${p.id}','url',this.value)">
         </div>
         <button class="product-del-btn" onclick="removeProduct('${p.id}')">Odebrat produkt</button>
       </div>
@@ -1549,6 +1558,13 @@ function update() {
         price.className = 'op-product-price';
         price.textContent = p.price;
         details.appendChild(price);
+      }
+
+      if (p.url && p.url.trim()) {
+        const urlDiv = document.createElement('div');
+        urlDiv.className = 'op-product-url';
+        urlDiv.innerHTML = `<a href="${esc(p.url)}" target="_blank">${esc(p.url)}</a>`;
+        details.appendChild(urlDiv);
       }
 
       card.appendChild(photoCol);
