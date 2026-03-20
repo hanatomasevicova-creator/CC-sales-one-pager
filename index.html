@@ -206,14 +206,15 @@
 
     /* bullet textarea wrapper */
     .ta-wrap { position: relative; }
+    .ta-btn-row { display: flex; gap: 4px; margin-bottom: 4px; }
     .bullet-btn {
-      position: absolute; top: -22px; right: 0;
       font-size: 10px; font-weight: 700; font-family: 'Inter', sans-serif;
       color: var(--g400); background: none; border: 1px solid var(--g200);
       border-radius: 4px; padding: 2px 7px; cursor: pointer;
       transition: all .15s; letter-spacing: .03em;
     }
     .bullet-btn:hover { color: var(--black); border-color: var(--black); }
+    .bold-btn { font-style: normal; }
 
     /* preview list styles */
     .op-list { padding-left: 15px; margin: 3px 0; }
@@ -439,7 +440,7 @@
       display: grid; grid-template-columns: 1fr 4px 1fr;
       gap: 0; margin-top: 8px; align-items: start;
     }
-    .op-product-bottom-row > *:not(.col-resize) { padding: 0 4px; }
+    .op-product-bottom-row > *:not(.col-resize) { padding: 0 4px; min-width: 0; word-break: break-word; }
     .col-resize {
       width: 4px; cursor: col-resize; background: transparent;
       border-radius: 2px; transition: background .15s; align-self: stretch;
@@ -706,7 +707,7 @@
       <div class="field">
         <label class="lbl">Popis kampaně</label>
         <div class="ta-wrap">
-          <button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• body</button>
+          <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
           <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
         </div>
       </div>
@@ -714,14 +715,14 @@
         <div>
           <label class="lbl">Cílová skupina</label>
           <div class="ta-wrap">
-            <button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• body</button>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('targetGroup')"><b>B</b></button></div>
             <textarea id="targetGroup" class="bullet-ta" style="min-height:52px" placeholder="např. Tech profesionálové 25–45" oninput="update()"></textarea>
           </div>
         </div>
         <div>
           <label class="lbl">Timing</label>
           <div class="ta-wrap">
-            <button class="bullet-btn" type="button" onclick="insertBullet('timing')">• body</button>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('timing')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('timing')"><b>B</b></button></div>
             <textarea id="timing" class="bullet-ta" style="min-height:52px" placeholder="např. Q2 2025" oninput="update()"></textarea>
           </div>
         </div>
@@ -1071,7 +1072,7 @@ function startColResize(e, row) {
   const startX = e.clientX;
   const rowW = row.getBoundingClientRect().width;
   const cols = getComputedStyle(row).gridTemplateColumns.split(' ');
-  const startFr = parseFloat(cols[0]) / (parseFloat(cols[0]) + parseFloat(cols[2]) + parseFloat(cols[3]));
+  const startFr = parseFloat(cols[0]) / (parseFloat(cols[0]) + parseFloat(cols[2]));
 
   function onMove(ev) {
     const dx = ev.clientX - startX;
@@ -1398,21 +1399,21 @@ function renderProductCards() {
         <div class="field">
           <label class="lbl">Popis</label>
           <div class="ta-wrap">
-            <button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('desc_${p.id}')"><b>B</b></button></div>
             <textarea id="desc_${p.id}" class="bullet-ta" placeholder="Co produkt zahrnuje…" oninput="updateProduct('${p.id}','desc',this.value)">${esc(p.desc)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Specifikace</label>
           <div class="ta-wrap">
-            <button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('zapojeni_${p.id}')"><b>B</b></button></div>
             <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="např. konkrétní téma" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Dosahy <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
           <div class="ta-wrap">
-            <button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('dosahy_${p.id}')"><b>B</b></button></div>
             <textarea id="dosahy_${p.id}" class="bullet-ta" placeholder="Dosah produktu…" oninput="updateProduct('${p.id}','dosahy',this.value)">${esc(p.dosahy)}</textarea>
           </div>
         </div>
@@ -1679,6 +1680,10 @@ function esc(s) { return escHtml(s); }
 function escAttr(s) { return (s||'').replace(/"/g,'&quot;'); }
 
 // Renders text with bullet support: lines starting with "• " or "- " become <li>
+function applyBold(str) {
+  return escHtml(str).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
+
 function renderText(text) {
   if (!text || !text.trim()) return '—';
   const lines = text.split('\n');
@@ -1688,10 +1693,10 @@ function renderText(text) {
     const m = line.match(/^[•\-]\s+(.*)$/);
     if (m) {
       if (!inList) { html += '<ul class="op-list">'; inList = true; }
-      html += `<li>${escHtml(m[1])}</li>`;
+      html += `<li>${applyBold(m[1])}</li>`;
     } else {
       if (inList) { html += '</ul>'; inList = false; }
-      if (line.trim()) html += `<p class="op-text-p">${escHtml(line)}</p>`;
+      if (line.trim()) html += `<p class="op-text-p">${applyBold(line)}</p>`;
     }
   });
   if (inList) html += '</ul>';
@@ -1699,6 +1704,29 @@ function renderText(text) {
 }
 
 // Insert "• " at cursor in a textarea; if line already has content, prepend bullet
+function insertBold(id) {
+  const ta = document.getElementById(id);
+  if (!ta) return;
+  ta.focus();
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const val = ta.value;
+  const sel = val.slice(start, end);
+  // toggle: if already wrapped in **, remove; otherwise wrap
+  if (sel.startsWith('**') && sel.endsWith('**') && sel.length > 4) {
+    const inner = sel.slice(2, -2);
+    ta.value = val.slice(0, start) + inner + val.slice(end);
+    ta.setSelectionRange(start, start + inner.length);
+  } else if (sel) {
+    const wrapped = '**' + sel + '**';
+    ta.value = val.slice(0, start) + wrapped + val.slice(end);
+    ta.setSelectionRange(start, start + wrapped.length);
+  } else {
+    ta.value = val.slice(0, start) + '****' + val.slice(end);
+    ta.setSelectionRange(start + 2, start + 2);
+  }
+  ta.dispatchEvent(new Event('input'));
+}
+
 function insertBullet(id) {
   const ta = document.getElementById(id);
   if (!ta) return;
