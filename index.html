@@ -727,7 +727,7 @@
         </div>
       </div>
 
-      <div class="sep">Produkty</div>
+      <div class="sep" id="sepProdukty">Produkty</div>
 
       <div class="product-cards" id="productCards"></div>
       <button class="btn-add-product" onclick="addProduct()">+ Přidat produkt</button>
@@ -769,7 +769,8 @@
 
     </div>
     <div class="sb-footer">
-      <button class="btn-print" onclick="window.print()">Tisknout / Uložit jako PDF</button>
+      <div id="printErrors" style="display:none; background:#fef2f2; border:1px solid #fca5a5; border-radius:6px; padding:10px 12px; margin-bottom:10px; font-size:12px; color:#dc2626; line-height:1.6;"></div>
+      <button class="btn-print" onclick="validateAndPrint()">Uložit jako PDF</button>
     </div>
   </div>
 
@@ -1083,6 +1084,38 @@ function startColResize(e, row) {
   document.addEventListener('mouseup', onUp);
 }
 
+function parsePrice(str) {
+  if (!str) return 0;
+  // Rozpozná formáty: "2 x 50 000", "2x50000", "3 × 100 000" atd.
+  const mult = str.match(/(\d[\d\s]*)\s*[x×\*]\s*([\d\s]+)/i);
+  if (mult) {
+    const a = parseInt(mult[1].replace(/\s/g, ''), 10);
+    const b = parseInt(mult[2].replace(/\s/g, ''), 10);
+    return isNaN(a) || isNaN(b) ? 0 : a * b;
+  }
+  const num = parseInt(str.replace(/\D/g, ''), 10);
+  return isNaN(num) ? 0 : num;
+}
+
+function validateAndPrint() {
+  const errors = [];
+  if (!getField('clientName')) errors.push('Chybí název klienta / firmy');
+  if (!getField('collabTitle')) errors.push('Chybí popis spolupráce');
+  if (!getField('contactName')) errors.push('Chybí jméno kontaktní osoby');
+  if (products.length === 0) errors.push('Nejsou přidány žádné produkty');
+
+  const box = document.getElementById('printErrors');
+  if (errors.length > 0) {
+    box.style.display = 'block';
+    box.innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>') +
+      `<div style="margin-top:8px"><button onclick="document.getElementById('printErrors').style.display='none';window.print()" style="background:none;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;">Přesto tisknout</button></div>`;
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  box.style.display = 'none';
+  window.print();
+}
+
 function removeProductPhoto(id) {
   const p = products.find(x => x.id === id);
   if (p) { p.photo = null; renderProductCards(); saveStorage(); update(); }
@@ -1316,6 +1349,20 @@ function buildPresetOptions(selectedId) {
 function renderProductCards() {
   const container = document.getElementById('productCards');
   container.innerHTML = '';
+
+  // Počítadlo produktů
+  const sepEl = document.getElementById('sepProdukty');
+  if (sepEl) sepEl.textContent = products.length > 0 ? `Produkty (${products.length})` : 'Produkty';
+
+  // Auto-sum celkové hodnoty
+  const pricedProds = products.filter(p => p.price && p.price.trim());
+  if (pricedProds.length > 0) {
+    const sum = pricedProds.reduce((acc, p) => acc + parsePrice(p.price), 0);
+    if (sum > 0) {
+      const totalInput = document.getElementById('totalValue');
+      if (totalInput) totalInput.value = sum.toLocaleString('cs-CZ') + ' Kč bez DPH';
+    }
+  }
   products.forEach((p, i) => {
     const card = document.createElement('div');
     card.className = 'product-card-sb' + (p._open ? ' open' : '');
@@ -1460,10 +1507,7 @@ function update() {
   // Auto-sum product prices into totalValue
   const pricedProducts = products.filter(p => p.price && p.price.trim());
   if (pricedProducts.length > 0) {
-    const sum = pricedProducts.reduce((acc, p) => {
-      const num = parseInt(p.price.replace(/\D/g, ''), 10);
-      return acc + (isNaN(num) ? 0 : num);
-    }, 0);
+    const sum = pricedProducts.reduce((acc, p) => acc + parsePrice(p.price), 0);
     if (sum > 0) {
       const formatted = sum.toLocaleString('cs-CZ') + ' Kč bez DPH';
       const totalInput = document.getElementById('totalValue');
