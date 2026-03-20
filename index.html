@@ -741,6 +741,10 @@
         <label class="lbl">Cena pro vás <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
         <input type="text" id="specialPrice" placeholder="např. 290 000 Kč bez DPH" oninput="update()">
       </div>
+      <div class="field">
+        <label class="lbl">Poznámka <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
+        <textarea id="valueNote" class="bullet-ta" placeholder="např. Fakturace ve 2 splátkách…" oninput="update()" style="min-height:56px"></textarea>
+      </div>
 
       <div class="sep">Těším se na spolupráci</div>
       <div class="field">
@@ -852,6 +856,7 @@
       </div>
     </div>
   </div>
+  <div id="opValueNote" style="display:none; padding: 10px 40px 0; font-size:11px; color:var(--g500); line-height:1.6;"></div>
 
   <!-- Quote -->
   <div class="op-quote">
@@ -1638,6 +1643,14 @@ function update() {
     if (!valueRight.contains(totalEl)) valueRight.insertBefore(totalEl, valueRight.firstChild);
     totalEl.classList.remove('striked');
     specialEl.style.display = 'none';
+  }
+
+  // Value note
+  const valueNoteEl = document.getElementById('opValueNote');
+  if (valueNoteEl) {
+    const note = getField('valueNote');
+    if (note) { valueNoteEl.style.display = 'block'; valueNoteEl.textContent = note; }
+    else { valueNoteEl.style.display = 'none'; }
   }
 
   // Contact section
