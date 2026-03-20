@@ -616,6 +616,9 @@
     @page { size: A4; margin: 0; }
 
     @media print {
+      /* Zachovat barvy a obrázky */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
       body { background: white; display: block; height: auto; overflow: visible; }
       .sidebar { display: none !important; }
       .preview-wrap {
@@ -623,20 +626,25 @@
         width: 100%; overflow: visible;
       }
       .op {
-        box-shadow: none; width: 100%; margin: 0;
-        border-radius: 0; padding-top: 58px;
+        box-shadow: none; width: 100%; margin: 0; border-radius: 0;
       }
 
-      /* Header se opakuje na každé stránce */
+      /* Header v normálním flow — zobrazí se jen na první stránce */
       .op-header {
-        position: fixed; top: 0; left: 0; width: 100%;
-        z-index: 1000; border-radius: 0;
+        position: relative; border-radius: 0;
+        display: flex !important;
       }
 
-      /* Mezera po hlavičce na začátku obsahu nové stránky */
-      .op-cover, .op-body, .op-products, .op-value-bar,
-      .op-quote, .op-cctip, .op-contact {
-        padding-top: 0;
+      /* Obrázky — vždy viditelné */
+      img {
+        display: block !important;
+        max-width: 100% !important;
+        -webkit-print-color-adjust: exact !important;
+      }
+      .op-cover img, #mainCoverImg {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
       }
 
       /* Nikdy nepřelomit uprostřed těchto bloků */
@@ -650,14 +658,11 @@
       .op-contact       { break-inside: avoid; page-break-inside: avoid; }
       .op-footer        { break-inside: avoid; page-break-inside: avoid; }
 
-      /* Začít novou stránku před produkty a hodnotovým pásem pokud je to nutné */
-      .op-products      { break-before: auto; }
       .op-value-bar     { break-before: avoid; }
       .op-contact       { break-before: avoid; }
       .op-footer        { break-before: avoid; }
 
-      /* Nedělat orphans/widows — min. 3 řádky na stránce */
-      p, li, div { orphans: 3; widows: 3; }
+      p, li { orphans: 3; widows: 3; }
     }
   </style>
 </head>
