@@ -214,6 +214,7 @@
       transition: all .15s; letter-spacing: .03em;
     }
     .bullet-btn:hover { color: var(--black); border-color: var(--black); }
+    .bullet-btn.active { color: var(--black); border-color: var(--black); background: var(--g100); }
     .bold-btn { font-style: normal; }
 
     /* preview list styles */
@@ -222,7 +223,7 @@
     .op-camp-text .op-list li { font-size: 13px; color: var(--g600); }
     .op-product-desc .op-list li { font-size: 12px; color: var(--g600); }
     .op-product-stat-val .op-list li { font-size: 12px; color: var(--black); font-weight: 500; }
-    .op-product-zapojeni { margin-top: 8px; font-size: 12px; color: var(--g600); font-style: italic; line-height: 1.5; }
+    .op-product-zapojeni { font-size: 12px; color: var(--g600); font-style: italic; line-height: 1.5; flex: 1; min-width: 0; overflow: hidden; word-break: break-word; white-space: pre-line; }
     .op-product-zapojeni-label { font-style: normal; font-weight: 700; color: var(--black); }
     .op-text-p { margin: 0 0 2px; }
 
@@ -402,7 +403,7 @@
     .op-products { padding: 0 40px; }
     .op-product {
       display: grid; grid-template-columns: 140px 1fr;
-      gap: 0; border: 1px solid var(--g200); border-radius: 8px;
+      border: 1px solid var(--g200); border-radius: 8px;
       overflow: hidden; margin-bottom: 10px;
       page-break-inside: avoid; break-inside: avoid;
     }
@@ -416,38 +417,54 @@
       font-size: 11px; color: var(--g300); letter-spacing: .08em;
     }
     .op-product-details {
-      padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
-      position: relative;
+      grid-column: 2; grid-row: 1;
+      padding: 14px 16px;
+      overflow: hidden;
+    }
+    .op-product-header-row {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
     }
     .op-product-name {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 20px; font-weight: 900; text-transform: uppercase;
       color: var(--black); line-height: 1; letter-spacing: .01em;
+      margin-bottom: 4px;
     }
-    .op-product-desc { font-size: 11px; line-height: 1.55; color: var(--g600); flex: 1; }
+    .op-product-desc { font-size: 11px; line-height: 1.55; color: var(--g600); }
+    .op-product-bottom {
+      grid-column: 1 / -1;
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 12px;
+      padding: 6px 16px 14px;
+    }
     .op-product-price {
       font-family: 'Barlow Condensed', sans-serif;
       font-size: 15px; font-weight: 600; color: var(--g400);
       letter-spacing: .02em;
-      position: absolute; bottom: 14px; right: 16px;
+      white-space: nowrap; flex-shrink: 0; text-align: right;
     }
     .op-product-url {
-      font-size: 10px; color: var(--g400); margin-top: 6px;
+      grid-column: 1 / -1;
+      font-size: 10px; color: var(--g400); padding: 0 16px 8px;
       word-break: break-all;
     }
     .op-product-url a { color: var(--g400); text-decoration: underline; }
-    .op-product-bottom-row {
-      display: grid; grid-template-columns: 1fr 4px 1fr;
-      gap: 0; margin-top: 8px; align-items: start;
+    .op-product-dosahy {
+      float: right;
+      width: fit-content; max-width: 200px; margin: 0 0 8px 12px;
+      background: var(--g50); border: 1px solid var(--g200); border-radius: 6px;
+      padding: 7px 10px; font-size: 10px; line-height: 1.55; color: var(--g600);
     }
-    .op-product-bottom-row > *:not(.col-resize) { padding: 0 4px; min-width: 0; word-break: break-word; }
-    .col-resize {
-      width: 4px; cursor: col-resize; background: transparent;
-      border-radius: 2px; transition: background .15s; align-self: stretch;
-      min-height: 20px;
+    .op-product-dosahy-label {
+      display: block; font-size: 8px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--g300); margin-bottom: 3px;
     }
-    .col-resize:hover, .col-resize.dragging { background: var(--g300); }
-    @media print { .col-resize { display: none; } }
+    /* text alignment utilities */
+    .text-left    { text-align: left; }
+    .text-right   { text-align: right; }
+    .text-center  { text-align: center; }
+    .text-justify { text-align: justify; }
+    .text-column-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    @media print { .op-product-dosahy { background: var(--g50) !important; float: right !important; } }
 
     /* Value bar */
     .op-value-bar {
@@ -611,6 +628,20 @@
       display: flex; align-items: center; justify-content: space-between; margin-top: auto;
     }
     .op-footer-url { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .06em; }
+
+    /* ═══ EDITABLE PREVIEW ═══ */
+    .op-editable {
+      cursor: text; border-radius: 3px;
+      transition: background .12s, outline .12s;
+    }
+    .op-editable:hover {
+      background: rgba(59,130,246,.07);
+      outline: 1.5px dashed rgba(59,130,246,.35);
+      outline-offset: 2px;
+    }
+    @media print {
+      .op-editable { cursor: default !important; outline: none !important; background: transparent !important; }
+    }
 
     /* ═══ PRINT ═══ */
     @page { size: A4; margin: 0; }
@@ -812,7 +843,7 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 20.66" width="110" height="13">
       <g fill="#ffffff"><path d="M15.49,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,12.79,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7A5.93,5.93,0,0,1,.85,16.65a8.62,8.62,0,0,1-.62-2A14.26,14.26,0,0,1,0,12.56c0-.75,0-1.49,0-2.24S0,8.81,0,8.09A11.52,11.52,0,0,1,.23,6,8.23,8.23,0,0,1,.85,4,5.61,5.61,0,0,1,2.08,2.29,7.69,7.69,0,0,1,4.58.59,8.22,8.22,0,0,1,7.77,0,8.55,8.55,0,0,1,10.5.41a6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93H10.4a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="15.49 19.92 15.49 16.13 23.41 4.37 15.83 4.37 15.83 0 29.51 0 29.51 3.79 21.56 15.55 29.51 15.55 29.51 19.92 15.49 19.92"/><polygon points="30.25 19.89 30.25 0 44.26 0 44.26 4.37 35.32 4.37 35.32 7.7 42.96 7.7 42.96 12.07 35.32 12.07 35.32 15.55 44.26 15.55 44.26 19.92 30.25 19.92 30.25 19.89"/><path d="M61.23,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,58.53,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,46,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,53.51,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29A13.1,13.1,0,0,0,51,14.05a4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="72.4 19.92 72.4 12.03 67.03 12.03 67.03 19.92 61.97 19.92 61.97 0 67.03 0 67.03 7.66 72.4 7.66 72.4 0 77.46 0 77.46 19.92 72.4 19.92"/><path d="M95.16,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,92.46,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,79.9,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,87.44,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Zm11.1,5.87-3.62-7.39h-1.71v7.39h-5V0H104a7.42,7.42,0,0,1,3,.55A6.71,6.71,0,0,1,109.21,2,6.08,6.08,0,0,1,110.55,4,6.27,6.27,0,0,1,111,6.39a5.38,5.38,0,0,1-.31,1.85,6.94,6.94,0,0,1-.78,1.5,6.4,6.4,0,0,1-1.06,1.13,7.79,7.79,0,0,1-1.19.75l4.45,8.29h-5.87ZM106,6.36a2,2,0,0,0-.57-1.4,2.15,2.15,0,0,0-1.6-.63H101v4h2.84a2,2,0,0,0,1.6-.63A1.86,1.86,0,0,0,106,6.36Zm22.35,6.93a7.07,7.07,0,0,1-4.77,6.84,9,9,0,0,1-3,.52,8.66,8.66,0,0,1-3-.52,7.14,7.14,0,0,1-2.45-1.47,7,7,0,0,1-2.27-5.37V0h5V13.17a3.14,3.14,0,0,0,.7,2.22,2.54,2.54,0,0,0,2,.77,2.7,2.7,0,0,0,2-.77,3.07,3.07,0,0,0,.72-2.22V0h5V13.3Z"/><polygon points="141.81 19.92 135.45 9.9 135.45 19.92 130.57 19.92 130.57 0 134.83 0 141.19 10.02 141.19 0 146.07 0 146.07 19.92 141.81 19.92"/><path d="M163.77,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,161.07,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,148.51,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,156.05,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="174.94 19.92 174.94 12.03 169.57 12.03 169.57 19.92 164.51 19.92 164.51 0 169.57 0 169.57 7.66 174.94 7.66 174.94 0 180 0 180 19.92 174.94 19.92"/></g>
     </svg>
-    <div class="op-client-name" id="opClient">Návrh spolupráce</div>
+    <div class="op-client-name op-editable" id="opClient" onclick="focusSidebarField('clientName')">Návrh spolupráce</div>
   </div>
 
   <!-- Cover -->
@@ -821,7 +852,7 @@
     <img id="opCoverImg" style="display:none">
     <div class="op-cover-caption">
       <div class="op-cover-tag">Mediální partnerství</div>
-      <div class="op-cover-title" id="opCollabTitle">Nadpis spolupráce</div>
+      <div class="op-cover-title op-editable" id="opCollabTitle" onclick="focusSidebarField('collabTitle')">Nadpis spolupráce</div>
     </div>
   </div>
 
@@ -831,15 +862,15 @@
     <div class="op-camp-grid" id="opCampGrid">
       <div class="op-camp-col" id="opCampDescCol">
         <div class="op-camp-label">Popis kampaně</div>
-        <div class="op-camp-text" id="opCampDesc"></div>
+        <div class="op-camp-text op-editable" id="opCampDesc" onclick="focusSidebarField('campDesc')"></div>
       </div>
       <div class="op-camp-col" id="opTargetGroupCol">
         <div class="op-camp-label">Cílová skupina</div>
-        <div class="op-camp-text" id="opTargetGroup"></div>
+        <div class="op-camp-text op-editable" id="opTargetGroup" onclick="focusSidebarField('targetGroup')"></div>
       </div>
       <div class="op-camp-col" id="opTimingCol">
         <div class="op-camp-label">Timing</div>
-        <div class="op-camp-text" id="opTiming"></div>
+        <div class="op-camp-text op-editable" id="opTiming" onclick="focusSidebarField('timing')"></div>
       </div>
     </div>
 
@@ -1324,7 +1355,7 @@ function handleUpload(e) {
 function addProduct() {
   productCounter++;
   const id = 'prod_' + Date.now();
-  products.push({ id, photo: null, preset: '', name: '', desc: '', hodnoty: '', dosahy: '', zapojeni: '', price: '', url: '' });
+  products.push({ id, photo: null, preset: '', name: '', desc: '', hodnoty: '', dosahy: '', zapojeni: '', price: '', url: '', descAlign: 'text-left', zapojeniAlign: 'text-left', dosahyAlign: 'text-right' });
   renderProductCards();
   update();
   // auto-open the new card
@@ -1355,6 +1386,34 @@ function buildPresetOptions(selectedId) {
     html += `</optgroup>`;
   });
   return html;
+}
+
+function focusSidebarField(fieldId, prodId) {
+  switchTab('form');
+  if (prodId) {
+    const card = document.querySelector(`.product-card-sb[data-id="${prodId}"]`);
+    if (card && !card.classList.contains('open')) card.classList.add('open');
+  }
+  const el = document.getElementById(fieldId);
+  if (el) {
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+      if (typeof el.select === 'function') el.select();
+    }, 50);
+  }
+}
+
+function alignBtns(prodId, field, current) {
+  const opts = [
+    { val: 'text-left',    label: '←', title: 'Vlevo' },
+    { val: 'text-center',  label: '↔', title: 'Na střed' },
+    { val: 'text-right',   label: '→', title: 'Vpravo' },
+    { val: 'text-justify', label: '⊟', title: 'Do bloku' },
+  ];
+  return `<span style="color:var(--g200);margin:0 1px">|</span>` + opts.map(o =>
+    `<button class="bullet-btn${current === o.val ? ' active' : ''}" type="button" title="${o.title}" onclick="updateProduct('${prodId}','${field}','${o.val}')">${o.label}</button>`
+  ).join('');
 }
 
 function renderProductCards() {
@@ -1398,33 +1457,33 @@ function renderProductCards() {
         </div>
         <div class="field">
           <label class="lbl">Název produktu</label>
-          <input type="text" value="${esc(p.name)}" placeholder="např. Newsletter Premium"
+          <input type="text" id="pname_${p.id}" value="${esc(p.name)}" placeholder="např. Newsletter Premium"
             oninput="updateProduct('${p.id}','name',this.value)">
         </div>
         <div class="field">
           <label class="lbl">Popis</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('desc_${p.id}')"><b>B</b></button></div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('desc_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'descAlign', p.descAlign || 'text-left')}</div>
             <textarea id="desc_${p.id}" class="bullet-ta" placeholder="Co produkt zahrnuje…" oninput="updateProduct('${p.id}','desc',this.value)">${esc(p.desc)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Specifikace</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('zapojeni_${p.id}')"><b>B</b></button></div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('zapojeni_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'zapojeniAlign', p.zapojeniAlign || 'text-left')}</div>
             <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="např. konkrétní téma" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Dosahy <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('dosahy_${p.id}')"><b>B</b></button></div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('dosahy_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'dosahyAlign', p.dosahyAlign || 'text-right')}</div>
             <textarea id="dosahy_${p.id}" class="bullet-ta" placeholder="Dosah produktu…" oninput="updateProduct('${p.id}','dosahy',this.value)">${esc(p.dosahy)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Částka <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
-          <input type="text" value="${esc(p.price)}" placeholder="např. 100 000 Kč bez DPH" oninput="updateProduct('${p.id}','price',this.value)">
+          <input type="text" id="pprice_${p.id}" value="${esc(p.price)}" placeholder="např. 100 000 Kč bez DPH" oninput="updateProduct('${p.id}','price',this.value)">
         </div>
         <div class="field">
           <label class="lbl">Odkaz <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
@@ -1559,71 +1618,67 @@ function update() {
       const details = document.createElement('div');
       details.className = 'op-product-details';
 
-      const name = document.createElement('div');
-      name.className = 'op-product-name';
-      name.textContent = p.name || 'Název produktu';
-      details.appendChild(name);
-
-      if (p.desc) {
-        const desc = document.createElement('div');
-        desc.className = 'op-product-desc';
-        desc.innerHTML = renderText(p.desc);
-        details.appendChild(desc);
-      }
-
-
       const hasZap   = p.zapojeni && p.zapojeni.trim();
       const hasDos   = p.dosahy && p.dosahy.trim();
       const hasPrice = p.price && p.price.trim();
 
-      if (hasZap || hasDos || hasPrice) {
-        const row = document.createElement('div');
-        row.className = 'op-product-bottom-row';
+      // Dosahy — float right, musí být první v DOMu
+      if (hasDos) {
+        const dosBox = document.createElement('div');
+        dosBox.className = 'op-product-dosahy op-editable ' + (p.dosahyAlign || 'text-right');
+        dosBox.innerHTML = `<span class="op-product-dosahy-label">Dosahy</span>${renderText(p.dosahy)}`;
+        dosBox.onclick = () => focusSidebarField('dosahy_' + p.id, p.id);
+        details.appendChild(dosBox);
+      }
 
+      const name = document.createElement('div');
+      name.className = 'op-product-name op-editable';
+      name.textContent = p.name || 'Název produktu';
+      name.onclick = () => focusSidebarField('pname_' + p.id, p.id);
+      details.appendChild(name);
+
+      if (p.desc) {
+        const desc = document.createElement('div');
+        desc.className = 'op-product-desc op-editable ' + (p.descAlign || 'text-left');
+        desc.innerHTML = renderText(p.desc);
+        desc.onclick = () => focusSidebarField('desc_' + p.id, p.id);
+        details.appendChild(desc);
+      }
+
+      // Bottom sekce — přes celou šířku (col 1/-1), zapojeni + cena ve sloupci
+      let bottomEl = null;
+      if (hasZap || hasPrice) {
+        bottomEl = document.createElement('div');
+        bottomEl.className = 'op-product-bottom';
         if (hasZap) {
           const zap = document.createElement('div');
-          zap.className = 'op-product-zapojeni';
+          zap.className = 'op-product-zapojeni op-editable ' + (p.zapojeniAlign || 'text-left');
           zap.innerHTML = `<span class="op-product-zapojeni-label">Detail: </span>${renderText(p.zapojeni)}`;
-          row.appendChild(zap);
+          zap.onclick = () => focusSidebarField('zapojeni_' + p.id, p.id);
+          bottomEl.appendChild(zap);
         } else {
-          row.appendChild(document.createElement('div')); // placeholder
+          bottomEl.appendChild(document.createElement('div'));
         }
-
-        // resize handle
-        const handle = document.createElement('div');
-        handle.className = 'col-resize';
-        handle.title = 'Táhni pro změnu šířky sloupců';
-        handle.addEventListener('mousedown', e => startColResize(e, row));
-        row.appendChild(handle);
-
-        if (hasDos) {
-          const dos = document.createElement('div');
-          dos.className = 'op-product-zapojeni';
-          dos.innerHTML = `<span class="op-product-zapojeni-label">Dosahy: </span>${renderText(p.dosahy)}`;
-          row.appendChild(dos);
-        } else {
-          row.appendChild(document.createElement('div'));
+        if (hasPrice) {
+          const price = document.createElement('div');
+          price.className = 'op-product-price op-editable';
+          price.textContent = p.price;
+          price.onclick = () => focusSidebarField('pprice_' + p.id, p.id);
+          bottomEl.appendChild(price);
         }
-
-        details.appendChild(row);
       }
 
-      if (hasPrice) {
-        const price = document.createElement('div');
-        price.className = 'op-product-price';
-        price.textContent = p.price;
-        details.appendChild(price);
-      }
-
+      let urlEl = null;
       if (p.url && p.url.trim()) {
-        const urlDiv = document.createElement('div');
-        urlDiv.className = 'op-product-url';
-        urlDiv.innerHTML = `<a href="${esc(p.url)}" target="_blank">${esc(p.url)}</a>`;
-        details.appendChild(urlDiv);
+        urlEl = document.createElement('div');
+        urlEl.className = 'op-product-url';
+        urlEl.innerHTML = `<a href="${esc(p.url)}" target="_blank">${esc(p.url)}</a>`;
       }
 
       card.appendChild(photoCol);
       card.appendChild(details);
+      if (bottomEl) card.appendChild(bottomEl);
+      if (urlEl) card.appendChild(urlEl);
       opProducts.appendChild(card);
     });
   }
@@ -1702,6 +1757,7 @@ function renderText(text) {
     } else {
       if (inList) { html += '</ul>'; inList = false; }
       if (line.trim()) html += `<p class="op-text-p">${applyBold(line)}</p>`;
+      else html += `<br>`;
     }
   });
   if (inList) html += '</ul>';
