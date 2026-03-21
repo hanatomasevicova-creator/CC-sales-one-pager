@@ -89,7 +89,11 @@
 
     .field { margin-bottom: 12px; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    #rowTargetTiming:has(#targetGroup:placeholder-shown):has(#timing:placeholder-shown) { display: none; }
+    .camp-detail-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: start; }
+    .camp-detail-row:has(#targetGroup:placeholder-shown):has(#timing:placeholder-shown) { grid-template-columns: 1fr; }
+    .camp-detail-row:has(#targetGroup:placeholder-shown):has(#timing:placeholder-shown) .camp-side-col { display: none; }
+    .camp-detail-row .field { margin-bottom: 0; }
+    .lbl-opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--g400); }
 
     label.lbl {
       display: block; font-size: 11px; font-weight: 600;
@@ -747,23 +751,23 @@
 
       <div class="sep">Detail kampaně</div>
 
-      <div class="field">
-        <label class="lbl">Popis kampaně</label>
-        <div class="ta-wrap">
-          <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
-          <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
+      <div class="camp-detail-row" id="campDetailRow">
+        <div class="field">
+          <label class="lbl">Popis kampaně</label>
+          <div class="ta-wrap">
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
+            <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
+          </div>
         </div>
-      </div>
-      <div class="field-row" id="rowTargetTiming">
-        <div>
-          <label class="lbl">Cílová skupina</label>
+        <div class="field camp-side-col">
+          <label class="lbl">Cílová skupina <span class="lbl-opt">(volitelné)</span></label>
           <div class="ta-wrap">
             <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('targetGroup')"><b>B</b></button></div>
             <textarea id="targetGroup" class="bullet-ta" style="min-height:52px" placeholder="např. Tech profesionálové 25–45" oninput="update()"></textarea>
           </div>
         </div>
-        <div>
-          <label class="lbl">Timing</label>
+        <div class="field camp-side-col">
+          <label class="lbl">Timing <span class="lbl-opt">(volitelné)</span></label>
           <div class="ta-wrap">
             <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('timing')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('timing')"><b>B</b></button></div>
             <textarea id="timing" class="bullet-ta" style="min-height:52px" placeholder="např. Q2 2025" oninput="update()"></textarea>
