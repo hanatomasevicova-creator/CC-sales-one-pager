@@ -19,6 +19,7 @@
       --g600: #555555;
       --sidebar: 380px;
       --a4: 794px;
+      --op-px: 40px;
     }
 
     body {
@@ -88,6 +89,7 @@
 
     .field { margin-bottom: 12px; }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    #rowTargetTiming:has(#targetGroup:placeholder-shown):has(#timing:placeholder-shown) { display: none; }
 
     label.lbl {
       display: block; font-size: 11px; font-weight: 600;
@@ -224,7 +226,7 @@
     .op-product-desc .op-list li { font-size: 12px; color: var(--g600); }
     .op-product-stat-val .op-list li { font-size: 12px; color: var(--black); font-weight: 500; }
     .op-product-zapojeni { font-size: 12px; color: var(--g600); font-style: italic; line-height: 1.5; flex: 1; min-width: 0; overflow: hidden; word-break: break-word; white-space: pre-line; }
-    .op-product-zapojeni-label { font-style: normal; font-weight: 700; color: var(--black); }
+    .op-product-zapojeni-label { font-style: normal; font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: .05em; color: var(--g400); margin-bottom: 4px; display: block; }
     .op-text-p { margin: 0 0 2px; }
 
     /* photo bank */
@@ -367,7 +369,7 @@
     }
 
     /* Body */
-    .op-body { padding: 36px 40px 0; }
+    .op-body { padding: 36px var(--op-px) 0; }
 
     .op-section-head {
       font-size: 9px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
@@ -393,6 +395,9 @@
       margin-right: 24px;
     }
     .op-camp-col:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+    /* Single-column mode: campDesc spans full width without the column divider */
+    .op-camp-grid.single-col { grid-template-columns: 1fr; }
+    .op-camp-grid.single-col .op-camp-col { grid-column: 1 / -1; padding-right: 0; margin-right: 0; border-right: none; }
     .op-camp-label {
       font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
       color: var(--g300); margin-bottom: 6px;
@@ -400,7 +405,7 @@
     .op-camp-text { font-size: 13px; line-height: 1.65; color: var(--g600); }
 
     /* Products */
-    .op-products { padding: 0 40px; }
+    .op-products { padding: 0 var(--op-px); }
     .op-product {
       display: grid; grid-template-columns: 140px 1fr;
       border: 1px solid var(--g200); border-radius: 8px;
@@ -455,9 +460,11 @@
       padding: 7px 10px; font-size: 10px; line-height: 1.55; color: var(--g600);
     }
     .op-product-dosahy-label {
-      display: block; font-size: 8px; font-weight: 700; letter-spacing: .14em;
-      text-transform: uppercase; color: var(--g300); margin-bottom: 3px;
+      display: block; font-size: 11px; font-weight: 400; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--g400); margin-bottom: 4px;
     }
+    .op-product-dosahy .op-text-p:nth-child(odd) { font-size: 15px; font-weight: 500; color: var(--black); line-height: 1.2; margin-bottom: 0; }
+    .op-product-dosahy .op-text-p:nth-child(even) { font-size: 10px; color: var(--g400); line-height: 1.4; margin-bottom: 6px; }
     /* text alignment utilities */
     .text-left    { text-align: left; }
     .text-right   { text-align: right; }
@@ -468,7 +475,7 @@
 
     /* Value bar */
     .op-value-bar {
-      padding: 18px 40px;
+      padding: 18px var(--op-px);
       display: flex; align-items: center; justify-content: space-between;
       page-break-inside: avoid; break-inside: avoid;
       border-top: 1px solid var(--g200);
@@ -600,7 +607,7 @@
     .op-contact {
       background: var(--g50);
       border-top: 1px solid var(--g200);
-      padding: 18px 40px 20px;
+      padding: 18px var(--op-px) 20px;
       break-inside: avoid;
       display: flex;
       align-items: flex-start;
@@ -624,7 +631,7 @@
 
     /* Footer */
     .op-footer {
-      background: var(--black); padding: 14px 40px;
+      background: var(--black); padding: 14px var(--op-px);
       display: flex; align-items: center; justify-content: space-between; margin-top: auto;
     }
     .op-footer-url { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .06em; }
@@ -743,31 +750,31 @@
       <div class="field">
         <label class="lbl">Popis kampaně</label>
         <div class="ta-wrap">
-          <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
+          <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
           <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
         </div>
       </div>
-      <div class="field-row">
+      <div class="field-row" id="rowTargetTiming">
         <div>
           <label class="lbl">Cílová skupina</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('targetGroup')"><b>B</b></button></div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('targetGroup')"><b>B</b></button></div>
             <textarea id="targetGroup" class="bullet-ta" style="min-height:52px" placeholder="např. Tech profesionálové 25–45" oninput="update()"></textarea>
           </div>
         </div>
         <div>
           <label class="lbl">Timing</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('timing')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('timing')"><b>B</b></button></div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('timing')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('timing')"><b>B</b></button></div>
             <textarea id="timing" class="bullet-ta" style="min-height:52px" placeholder="např. Q2 2025" oninput="update()"></textarea>
           </div>
         </div>
       </div>
 
-      <div class="sep" id="sepProdukty">Produkty</div>
+      <div class="sep" id="sepProdukty">Formáty</div>
 
       <div class="product-cards" id="productCards"></div>
-      <button class="btn-add-product" onclick="addProduct()">+ Přidat produkt</button>
+      <button class="btn-add-product" onclick="addProduct()">+ Přidat formát</button>
 
       <div class="sep">Celková hodnota</div>
       <div class="field">
@@ -874,7 +881,7 @@
       </div>
     </div>
 
-    <div class="op-section-head">Produkty</div>
+    <div class="op-section-head">Formáty</div>
   </div>
 
   <!-- Products -->
@@ -1144,7 +1151,7 @@ function validateAndPrint() {
   if (!getField('clientName')) errors.push('Chybí název klienta / firmy');
   if (!getField('collabTitle')) errors.push('Chybí popis spolupráce');
   if (!getField('contactName')) errors.push('Chybí jméno kontaktní osoby');
-  if (products.length === 0) errors.push('Nejsou přidány žádné produkty');
+  if (products.length === 0) errors.push('Nejsou přidány žádné formáty');
 
   const box = document.getElementById('printErrors');
   if (errors.length > 0) {
@@ -1173,7 +1180,7 @@ function openPhotoPicker(target) {
     label.textContent = '📷 Vybíráš fotku týmu';
   } else {
     const p = products.find(x => x.id === target);
-    label.textContent = '📷 Vybíráš fotku pro: ' + (p && p.name ? p.name : 'produkt');
+    label.textContent = '📷 Vybíráš fotku pro: ' + (p && p.name ? p.name : 'formát');
   }
   banner.classList.add('visible');
   switchTab('photos');
@@ -1377,7 +1384,7 @@ function toggleProductCard(id) {
 function buildPresetOptions(selectedId) {
   const cats = {};
   PRODUCT_PRESETS.forEach(pr => { if (!cats[pr.cat]) cats[pr.cat] = []; cats[pr.cat].push(pr); });
-  let html = `<option value="">— Vybrat typ produktu —</option>`;
+  let html = `<option value="">— Vybrat typ formátu —</option>`;
   Object.entries(cats).forEach(([cat, items]) => {
     html += `<optgroup label="${cat}">`;
     items.forEach(pr => {
@@ -1422,7 +1429,7 @@ function renderProductCards() {
 
   // Počítadlo produktů
   const sepEl = document.getElementById('sepProdukty');
-  if (sepEl) sepEl.textContent = products.length > 0 ? `Produkty (${products.length})` : 'Produkty';
+  if (sepEl) sepEl.textContent = products.length > 0 ? `Formáty (${products.length})` : 'Formáty';
 
   // Auto-sum celkové hodnoty
   const pricedProds = products.filter(p => p.price && p.price.trim());
@@ -1440,12 +1447,12 @@ function renderProductCards() {
 
     card.innerHTML = `
       <div class="product-card-head" onclick="toggleProductCard('${p.id}')">
-        <span class="product-card-head-title">${p.name || 'Produkt ' + (i+1)}</span>
+        <span class="product-card-head-title">${p.name || 'Formát ' + (i+1)}</span>
         <span class="product-card-toggle">▾</span>
       </div>
       <div class="product-card-body">
         <div class="field">
-          <label class="lbl">Typ produktu</label>
+          <label class="lbl">Typ formátu</label>
           <select onchange="applyProductPreset('${p.id}', this.value)" style="width:100%;padding:7px 9px;border:1px solid var(--g200);border-radius:6px;font-size:12px;background:var(--g50);color:var(--black);font-family:'Inter',sans-serif">
             ${buildPresetOptions(p.preset)}
           </select>
@@ -1456,29 +1463,29 @@ function renderProductCards() {
           ${p.photo ? `<button class="product-cover-remove" title="Odebrat fotku" onclick="event.stopPropagation();removeProductPhoto('${p.id}')">×</button>` : ''}
         </div>
         <div class="field">
-          <label class="lbl">Název produktu</label>
+          <label class="lbl">Název formátu</label>
           <input type="text" id="pname_${p.id}" value="${esc(p.name)}" placeholder="např. Newsletter Premium"
             oninput="updateProduct('${p.id}','name',this.value)">
         </div>
         <div class="field">
           <label class="lbl">Popis</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('desc_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'descAlign', p.descAlign || 'text-left')}</div>
-            <textarea id="desc_${p.id}" class="bullet-ta" placeholder="Co produkt zahrnuje…" oninput="updateProduct('${p.id}','desc',this.value)">${esc(p.desc)}</textarea>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('desc_${p.id}')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('desc_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'descAlign', p.descAlign || 'text-left')}</div>
+            <textarea id="desc_${p.id}" class="bullet-ta" placeholder="Co formát zahrnuje…" oninput="updateProduct('${p.id}','desc',this.value)">${esc(p.desc)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Specifikace</label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('zapojeni_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'zapojeniAlign', p.zapojeniAlign || 'text-left')}</div>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('zapojeni_${p.id}')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('zapojeni_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'zapojeniAlign', p.zapojeniAlign || 'text-left')}</div>
             <textarea id="zapojeni_${p.id}" class="bullet-ta" placeholder="např. konkrétní téma" oninput="updateProduct('${p.id}','zapojeni',this.value)">${esc(p.zapojeni)}</textarea>
           </div>
         </div>
         <div class="field">
           <label class="lbl">Dosahy <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
           <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• body</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('dosahy_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'dosahyAlign', p.dosahyAlign || 'text-right')}</div>
-            <textarea id="dosahy_${p.id}" class="bullet-ta" placeholder="Dosah produktu…" oninput="updateProduct('${p.id}','dosahy',this.value)">${esc(p.dosahy)}</textarea>
+            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('dosahy_${p.id}')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('dosahy_${p.id}')"><b>B</b></button>${alignBtns(p.id, 'dosahyAlign', p.dosahyAlign || 'text-right')}</div>
+            <textarea id="dosahy_${p.id}" class="bullet-ta" placeholder="Dosah formátu…" oninput="updateProduct('${p.id}','dosahy',this.value)">${esc(p.dosahy)}</textarea>
           </div>
         </div>
         <div class="field">
@@ -1489,7 +1496,7 @@ function renderProductCards() {
           <label class="lbl">Odkaz <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--g400)">(volitelné)</span></label>
           <input type="url" value="${esc(p.url||'')}" placeholder="https://…" oninput="updateProduct('${p.id}','url',this.value)">
         </div>
-        <button class="product-del-btn" onclick="removeProduct('${p.id}')">Odebrat produkt</button>
+        <button class="product-del-btn" onclick="removeProduct('${p.id}')">Odebrat formát</button>
       </div>
     `;
     container.appendChild(card);
@@ -1523,7 +1530,7 @@ function updateProduct(id, field, value) {
   // re-render just the header title if name changed
   if (field === 'name') {
     const head = document.querySelector(`.product-card-sb[data-id="${id}"] .product-card-head-title`);
-    if (head) head.textContent = value || 'Produkt';
+    if (head) head.textContent = value || 'Formát';
   }
   update();
 }
@@ -1570,6 +1577,10 @@ function update() {
   document.getElementById('opTargetGroupCol').style.display = targetGroup ? '' : 'none';
   document.getElementById('opTimingCol').style.display      = timing      ? '' : 'none';
 
+  // When both side columns are empty, expand campDesc to full width
+  const hasSideCols = targetGroup || timing;
+  document.getElementById('opCampGrid').classList.toggle('single-col', !hasSideCols);
+
   const anyCamp = campDesc || targetGroup || timing;
   document.getElementById('opCampHeading').style.display = anyCamp ? '' : 'none';
   document.getElementById('opCampGrid').style.display    = anyCamp ? '' : 'none';
@@ -1593,7 +1604,7 @@ function update() {
   if (products.length === 0) {
     const empty = document.createElement('div');
     empty.style.cssText = 'padding: 0 40px 28px; font-size:12px; color:#ccc;';
-    empty.textContent = 'Přidej produkt tlačítkem ve formuláři vlevo.';
+    empty.textContent = 'Přidej formát tlačítkem ve formuláři vlevo.';
     opProducts.appendChild(empty);
   } else {
     products.forEach(p => {
@@ -1610,7 +1621,7 @@ function update() {
       } else {
         const pPh = document.createElement('div');
         pPh.className = 'op-product-photo-ph';
-        pPh.textContent = 'Fotka produktu';
+        pPh.textContent = 'Fotka formátu';
         photoCol.appendChild(pPh);
       }
 
@@ -1633,7 +1644,7 @@ function update() {
 
       const name = document.createElement('div');
       name.className = 'op-product-name op-editable';
-      name.textContent = p.name || 'Název produktu';
+      name.textContent = p.name || 'Název formátu';
       name.onclick = () => focusSidebarField('pname_' + p.id, p.id);
       details.appendChild(name);
 
@@ -1792,28 +1803,57 @@ function insertBullet(id) {
   const ta = document.getElementById(id);
   if (!ta) return;
   ta.focus();
-  const start = ta.selectionStart;
-  const val   = ta.value;
-  // find start of current line
-  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-  const lineEnd   = val.indexOf('\n', start);
-  const lineText  = val.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
-  let newVal, newCursor;
-  if (lineText.trim() === '') {
-    // empty line — insert bullet
-    newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
-    newCursor = lineStart + 2;
-  } else if (lineText.match(/^[•\-]\s/)) {
-    // already a bullet — remove it
-    newVal    = val.slice(0, lineStart) + lineText.replace(/^[•\-]\s+/, '') + val.slice(lineStart + lineText.length);
-    newCursor = Math.max(lineStart, start - 2);
-  } else {
-    // add bullet to existing line
-    newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
-    newCursor = start + 2;
+  const val      = ta.value;
+  const selStart = ta.selectionStart;
+  const selEnd   = ta.selectionEnd;
+
+  // Single-line (no selection or cursor only): original single-line toggle
+  if (selStart === selEnd) {
+    const lineStart = val.lastIndexOf('\n', selStart - 1) + 1;
+    const lineEndIdx = val.indexOf('\n', selStart);
+    const lineText = val.slice(lineStart, lineEndIdx === -1 ? undefined : lineEndIdx);
+    let newVal, newCursor;
+    if (lineText.trim() === '') {
+      newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
+      newCursor = lineStart + 2;
+    } else if (lineText.match(/^[•\-]\s/)) {
+      newVal    = val.slice(0, lineStart) + lineText.replace(/^[•\-]\s+/, '') + val.slice(lineStart + lineText.length);
+      newCursor = Math.max(lineStart, selStart - 2);
+    } else {
+      newVal    = val.slice(0, lineStart) + '• ' + val.slice(lineStart);
+      newCursor = selStart + 2;
+    }
+    ta.value = newVal;
+    ta.selectionStart = ta.selectionEnd = newCursor;
+    ta.dispatchEvent(new Event('input'));
+    return;
   }
-  ta.value = newVal;
-  ta.selectionStart = ta.selectionEnd = newCursor;
+
+  // Multi-line: expand selection to full lines
+  const blockStart  = val.lastIndexOf('\n', selStart - 1) + 1;
+  const blockEndIdx = val.indexOf('\n', selEnd - 1);
+  const blockText   = blockEndIdx === -1 ? val.slice(blockStart) : val.slice(blockStart, blockEndIdx);
+  const after       = blockEndIdx === -1 ? '' : val.slice(blockEndIdx);
+
+  const lines = blockText.split('\n');
+  // Toggle: if every non-empty line already has a bullet, remove; otherwise add
+  const nonEmpty = lines.filter(l => l.trim() !== '');
+  const allHave  = nonEmpty.length > 0 && nonEmpty.every(l => /^[•\-]\s/.test(l));
+
+  const newLines = lines.map(line => {
+    if (line.trim() === '') return line; // leave empty lines alone
+    if (allHave) {
+      return line.replace(/^[•\-]\s*/, '');
+    } else {
+      return /^[•\-]\s/.test(line) ? line : '• ' + line;
+    }
+  });
+
+  const newBlock = newLines.join('\n');
+  ta.value = val.slice(0, blockStart) + newBlock + after;
+  // Re-select the whole modified block so user sees what changed
+  ta.selectionStart = blockStart;
+  ta.selectionEnd   = blockStart + newBlock.length;
   ta.dispatchEvent(new Event('input'));
 }
 
