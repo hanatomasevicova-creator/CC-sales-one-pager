@@ -665,6 +665,8 @@
         display: block !important; padding: 0; margin: 0;
         width: 100%; overflow: visible;
       }
+
+      /* Flex layout zachován — display:block způsobuje černý cover v Chrome */
       .op {
         box-shadow: none; width: 100%; margin: 0; border-radius: 0;
       }
@@ -681,15 +683,20 @@
         max-width: 100% !important;
         -webkit-print-color-adjust: exact !important;
       }
-      .op-cover img, #mainCoverImg {
+      /* Cover: overflow:hidden způsobuje GPU compositor layer → černý render v Chrome PDF.
+         Oprava: overflow:visible + img absolutně pozicovaný jako u .op-product-photo */
+      .op-cover { overflow: visible !important; }
+      #opCoverImg {
         display: block !important;
+        position: absolute !important;
+        inset: 0 !important;
         width: 100% !important;
-        height: auto !important;
+        height: 100% !important;
+        object-fit: cover !important;
       }
 
       /* Nikdy nepřelomit uprostřed těchto bloků */
       .op-header        { break-inside: avoid; page-break-inside: avoid; }
-      .op-cover         { break-inside: avoid; page-break-inside: avoid; }
       .op-camp-grid     { break-inside: avoid; page-break-inside: avoid; }
       .op-product       { break-inside: avoid; page-break-inside: avoid; }
       .op-value-bar     { break-inside: avoid; page-break-inside: avoid; }
@@ -697,6 +704,13 @@
       .op-cctip         { break-inside: avoid; page-break-inside: avoid; }
       .op-contact       { break-inside: avoid; page-break-inside: avoid; }
       .op-footer        { break-inside: avoid; page-break-inside: avoid; }
+
+      /* Nadpisy sekcí nesmí zůstat osiřelé na konci stránky */
+      .op-section-head,
+      .op-section-head-large {
+        break-after: avoid; page-break-after: avoid;
+        break-inside: avoid; page-break-inside: avoid;
+      }
 
       .op-value-bar     { break-before: avoid; }
       .op-contact       { break-before: avoid; }
@@ -1164,6 +1178,7 @@ function validateAndPrint() {
     return;
   }
   box.style.display = 'none';
+  pushContactToBottom();
   window.print();
 }
 
@@ -1882,6 +1897,41 @@ document.addEventListener('keydown', e => {
     }
     ta.dispatchEvent(new Event('input'));
   }
+});
+
+// ════ PRINT: kontakt vždy dole na poslední stránce ════
+function pushContactToBottom() {
+  const contact = document.querySelector('.op-contact');
+  const footer  = document.querySelector('.op-footer');
+  const op      = document.getElementById('onepager');
+  if (!contact || !op) return;
+
+  // Reset padding, aby výpočet byl čistý
+  contact.style.paddingTop = '';
+  void op.offsetHeight; // force reflow
+
+  const A4_PX = 1122; // 297 mm × 96 dpi / 25.4
+
+  // Vzdálenost horní hrany contact od horní hrany op
+  // getBoundingClientRect diff funguje nezávisle na scroll i layout módu
+  const opRect   = op.getBoundingClientRect();
+  const contRect = contact.getBoundingClientRect();
+  const contactOffset = contRect.top - opRect.top;
+
+  const blockH = contact.offsetHeight + (footer ? footer.offsetHeight : 0);
+  const posInPage = contactOffset % A4_PX;
+  const remaining = posInPage > 0 ? A4_PX - posInPage : 0;
+
+  if (remaining > blockH + 10) {
+    contact.style.paddingTop = (remaining - blockH) + 'px';
+  }
+}
+
+window.addEventListener('beforeprint', pushContactToBottom);
+
+window.addEventListener('afterprint', function () {
+  const contact = document.querySelector('.op-contact');
+  if (contact) contact.style.paddingTop = '';
 });
 </script>
 
