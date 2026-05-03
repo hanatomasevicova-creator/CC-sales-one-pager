@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CzechCrunch — One Pager Builder</title>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -310,6 +312,14 @@
       transition: opacity .15s;
     }
     .btn-print:hover { opacity: .82; }
+    .btn-print:disabled { opacity: .5; cursor: wait; }
+    .btn-print .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ═══ PREVIEW WRAP ═══ */
     .preview-wrap {
@@ -482,18 +492,20 @@
     [data-block-id^="product_"] { padding: 0 var(--op-px); }
     @media print { .block-drag-handle { display: none !important; } [data-block-id].block-dragging { opacity: 1; outline: none; } }
 
-    /* Page boundary markers */
+    /* Page boundary markers — visual page gaps like Canva */
     .page-marker {
-      position: absolute; left: -8px; right: -8px; height: 0;
-      border-top: 2px dashed rgba(239,68,68,.45);
-      z-index: 15; pointer-events: none;
-      display: flex; justify-content: space-between; align-items: flex-start;
+      position: absolute; left: -24px; right: -24px;
+      height: 32px; transform: translateY(-16px);
+      background: #ddd; z-index: 15; pointer-events: none;
+      display: flex; justify-content: center; align-items: center; gap: 12px;
+      box-shadow: inset 0 4px 8px -4px rgba(0,0,0,.12),
+                  inset 0 -4px 8px -4px rgba(0,0,0,.12);
     }
     .page-marker span {
-      font-size: 8px; color: #ef4444; background: rgba(255,255,255,.9);
-      padding: 2px 6px; letter-spacing: .08em; text-transform: uppercase;
-      font-weight: 600; transform: translateY(-1px);
+      font-size: 8px; color: #999; letter-spacing: .1em;
+      text-transform: uppercase; font-weight: 600;
     }
+    .page-marker .page-marker-sep { color: #bbb; }
     @media print { .page-marker { display: none !important; } }
 
     /* Photo block */
@@ -1333,13 +1345,98 @@ function validateAndPrint() {
   if (errors.length > 0) {
     box.style.display = 'block';
     box.innerHTML = errors.map(e => `⚠️ ${e}`).join('<br>') +
-      `<div style="margin-top:8px"><button onclick="document.getElementById('printErrors').style.display='none';window.print()" style="background:none;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;">Přesto tisknout</button></div>`;
+      `<div style="margin-top:8px"><button onclick="document.getElementById('printErrors').style.display='none';exportPDF()" style="background:none;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;">Přesto exportovat</button></div>`;
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     return;
   }
   box.style.display = 'none';
-  pushContactToBottom();
-  window.print();
+  exportPDF();
+}
+
+async function exportPDF() {
+  const btn = document.querySelector('.btn-print');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Generuji PDF…';
+
+  try {
+    const op = document.getElementById('onepager');
+
+    // Hide editor-only elements
+    const hideSelectors = '.block-drag-handle, .block-remove-btn, .photo-align-bar, .photo-resize-handle, .photo-resize-handle-v, .page-marker, .op-spacer-label';
+    const hidden = [];
+    op.querySelectorAll(hideSelectors).forEach(el => {
+      hidden.push({ el, prev: el.style.display });
+      el.style.display = 'none';
+    });
+    // Hide spacer hatching (make spacers transparent)
+    const spacers = [];
+    op.querySelectorAll('.op-spacer').forEach(el => {
+      spacers.push({ el, prev: el.style.background });
+      el.style.background = 'transparent';
+    });
+
+    // Render full page to canvas at 2x for quality
+    const scale = 2;
+    const canvas = await html2canvas(op, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      width: op.scrollWidth,
+      height: op.scrollHeight,
+      windowWidth: op.scrollWidth,
+      windowHeight: op.scrollHeight,
+    });
+
+    // Restore hidden elements
+    hidden.forEach(({ el, prev }) => el.style.display = prev);
+    spacers.forEach(({ el, prev }) => el.style.background = prev);
+
+    // A4 dimensions
+    const A4_W_MM = 210;
+    const A4_H_MM = 297;
+    const pageWidthPx = 794 * scale;
+    const pageHeightPx = 1122 * scale;
+    const totalHeight = canvas.height;
+    const numPages = Math.ceil(totalHeight / pageHeightPx);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+    for (let i = 0; i < numPages; i++) {
+      if (i > 0) pdf.addPage();
+
+      // Slice this page from the full canvas
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = pageWidthPx;
+      pageCanvas.height = pageHeightPx;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pageWidthPx, pageHeightPx);
+
+      const srcY = i * pageHeightPx;
+      const srcH = Math.min(pageHeightPx, totalHeight - srcY);
+      if (srcH > 0) {
+        ctx.drawImage(canvas, 0, srcY, pageWidthPx, srcH, 0, 0, pageWidthPx, srcH);
+      }
+
+      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, A4_W_MM, A4_H_MM);
+    }
+
+    // File name from client name
+    const client = getField('clientName') || 'One-Pager';
+    const safe = client.replace(/[^a-zA-Z0-9áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ ]/g, '').replace(/\s+/g, '_');
+    pdf.save(safe + '_CC.pdf');
+
+  } catch (err) {
+    console.error('PDF export error:', err);
+    alert('Chyba při generování PDF. Zkuste to znovu.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
 }
 
 function removeProductPhoto(id) {
@@ -2288,7 +2385,7 @@ function updatePageMarkers() {
     const marker = document.createElement('div');
     marker.className = 'page-marker';
     marker.style.top = y + 'px';
-    marker.innerHTML = '<span>Strana ' + page + '</span><span>Strana ' + (page + 1) + '</span>';
+    marker.innerHTML = '<span>Strana ' + page + '</span><span class="page-marker-sep">|</span><span>Strana ' + (page + 1) + '</span>';
     op.appendChild(marker);
     page++;
   }
@@ -2523,40 +2620,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ════ PRINT: kontakt vždy dole na poslední stránce ════
-function pushContactToBottom() {
-  const contact = document.querySelector('.op-contact');
-  const footer  = document.querySelector('.op-footer');
-  const op      = document.getElementById('onepager');
-  if (!contact || !op) return;
-
-  // Reset padding, aby výpočet byl čistý
-  contact.style.paddingTop = '';
-  void op.offsetHeight; // force reflow
-
-  const A4_PX = 1122; // 297 mm × 96 dpi / 25.4
-
-  // Vzdálenost horní hrany contact od horní hrany op
-  // getBoundingClientRect diff funguje nezávisle na scroll i layout módu
-  const opRect   = op.getBoundingClientRect();
-  const contRect = contact.getBoundingClientRect();
-  const contactOffset = contRect.top - opRect.top;
-
-  const blockH = contact.offsetHeight + (footer ? footer.offsetHeight : 0);
-  const posInPage = contactOffset % A4_PX;
-  const remaining = posInPage > 0 ? A4_PX - posInPage : 0;
-
-  if (remaining > blockH + 10) {
-    contact.style.paddingTop = (remaining - blockH) + 'px';
-  }
-}
-
-window.addEventListener('beforeprint', pushContactToBottom);
-
-window.addEventListener('afterprint', function () {
-  const contact = document.querySelector('.op-contact');
-  if (contact) contact.style.paddingTop = '';
-});
+// pushContactToBottom removed — PDF export is now pixel-based via html2canvas+jsPDF
 </script>
 
 </body>
