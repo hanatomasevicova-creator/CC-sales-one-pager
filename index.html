@@ -1369,14 +1369,41 @@ async function exportPDF() {
       hidden.push({ el, prev: el.style.display });
       el.style.display = 'none';
     });
-    // Hide spacer hatching (make spacers transparent)
+    // Hide spacer hatching
     const spacers = [];
     op.querySelectorAll('.op-spacer').forEach(el => {
       spacers.push({ el, prev: el.style.background });
       el.style.background = 'transparent';
     });
 
-    // Render full page to canvas at 2x for quality
+    // ── Fix object-fit: html2canvas doesn't support object-fit: cover ──
+    // Convert <img> with object-fit to background-image on parent
+    const objFitFixes = [];
+    op.querySelectorAll('.op-product-photo img, .op-photo-block img, #opCoverImg').forEach(img => {
+      const cs = getComputedStyle(img);
+      if (cs.objectFit === 'cover' && img.src && img.style.display !== 'none') {
+        const parent = img.parentElement;
+        objFitFixes.push({
+          img,
+          parent,
+          imgDisplay: img.style.display,
+          parentBg: parent.style.backgroundImage,
+          parentBgSize: parent.style.backgroundSize,
+          parentBgPos: parent.style.backgroundPosition,
+          parentBgRepeat: parent.style.backgroundRepeat,
+        });
+        parent.style.backgroundImage = 'url(' + img.src + ')';
+        parent.style.backgroundSize = 'cover';
+        parent.style.backgroundPosition = cs.objectPosition || 'center center';
+        parent.style.backgroundRepeat = 'no-repeat';
+        img.style.display = 'none';
+      }
+    });
+
+    // Wait a tick for reflow
+    await new Promise(r => setTimeout(r, 50));
+
+    // Render full page to canvas at 2x for sharp text
     const scale = 2;
     const canvas = await html2canvas(op, {
       scale: scale,
@@ -1390,6 +1417,14 @@ async function exportPDF() {
       windowHeight: op.scrollHeight,
     });
 
+    // Restore object-fit images
+    objFitFixes.forEach(f => {
+      f.img.style.display = f.imgDisplay;
+      f.parent.style.backgroundImage = f.parentBg;
+      f.parent.style.backgroundSize = f.parentBgSize;
+      f.parent.style.backgroundPosition = f.parentBgPos;
+      f.parent.style.backgroundRepeat = f.parentBgRepeat;
+    });
     // Restore hidden elements
     hidden.forEach(({ el, prev }) => el.style.display = prev);
     spacers.forEach(({ el, prev }) => el.style.background = prev);
@@ -1400,7 +1435,22 @@ async function exportPDF() {
     const pageWidthPx = 794 * scale;
     const pageHeightPx = 1122 * scale;
     const totalHeight = canvas.height;
-    const numPages = Math.ceil(totalHeight / pageHeightPx);
+
+    // Skip trailing blank pages: find last row with non-white pixels
+    let effectiveHeight = totalHeight;
+    const testCtx = canvas.getContext('2d');
+    for (let row = totalHeight - 1; row > pageHeightPx; row -= scale) {
+      const rowData = testCtx.getImageData(0, row, pageWidthPx, 1).data;
+      let hasContent = false;
+      for (let px = 0; px < rowData.length; px += 4) {
+        if (rowData[px] < 250 || rowData[px+1] < 250 || rowData[px+2] < 250) {
+          hasContent = true; break;
+        }
+      }
+      if (hasContent) { effectiveHeight = row + 4 * scale; break; }
+    }
+
+    const numPages = Math.ceil(effectiveHeight / pageHeightPx);
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
@@ -1408,7 +1458,6 @@ async function exportPDF() {
     for (let i = 0; i < numPages; i++) {
       if (i > 0) pdf.addPage();
 
-      // Slice this page from the full canvas
       const pageCanvas = document.createElement('canvas');
       pageCanvas.width = pageWidthPx;
       pageCanvas.height = pageHeightPx;
@@ -1422,7 +1471,8 @@ async function exportPDF() {
         ctx.drawImage(canvas, 0, srcY, pageWidthPx, srcH, 0, 0, pageWidthPx, srcH);
       }
 
-      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, A4_W_MM, A4_H_MM);
+      // Use PNG for sharp text (no JPEG artifacts on text)
+      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, A4_W_MM, A4_H_MM);
     }
 
     // File name from client name
