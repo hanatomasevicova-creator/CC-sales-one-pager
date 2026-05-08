@@ -191,6 +191,27 @@
     }
     .btn-add-product:hover { border-color: var(--black); color: var(--black); }
 
+    /* Spacer controls in sidebar */
+    .spacer-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .spacer-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g50); border: 1px solid var(--g200); border-radius: 6px;
+      padding: 6px 10px; font-size: 12px;
+    }
+    .spacer-row label { font-weight: 600; color: var(--g600); white-space: nowrap; flex-shrink: 0; }
+    .spacer-row input[type="range"] { flex: 1; min-width: 60px; accent-color: var(--black); }
+    .spacer-row input[type="number"] {
+      width: 58px; border: 1px solid var(--g200); border-radius: 4px;
+      text-align: center; font-size: 11px; font-family: 'Inter', sans-serif;
+      font-weight: 600; padding: 3px 2px;
+    }
+    .spacer-row input[type="number"]:focus { border-color: var(--black); outline: none; }
+    .spacer-row .spacer-del {
+      background: none; border: none; cursor: pointer; font-size: 16px;
+      color: var(--g300); padding: 0 2px; line-height: 1;
+    }
+    .spacer-row .spacer-del:hover { color: #dc2626; }
+
     /* tips */
     .tips-list { display: flex; flex-direction: column; gap: 7px; }
     .tip-row { display: flex; gap: 6px; align-items: center; }
@@ -973,10 +994,11 @@
       <button class="btn-add-product" onclick="addProduct()">+ Přidat formát</button>
 
       <div class="sep">Přidat blok</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
         <button class="btn-add-product" onclick="addPhotoBlock()" style="flex:1">+ Fotka</button>
         <button class="btn-add-product" onclick="addSpacer()" style="flex:1">+ Mezera</button>
       </div>
+      <div class="spacer-list" id="spacerList"></div>
 
       <div class="sep">Celková hodnota</div>
       <div class="field">
@@ -1393,7 +1415,7 @@ async function exportPDF() {
     const op = document.getElementById('onepager');
 
     // Hide editor-only elements
-    const hideSelectors = '.block-drag-handle, .block-remove-btn, .photo-align-bar, .photo-resize-handle, .photo-resize-handle-v, .page-marker, .op-spacer-label';
+    const hideSelectors = '.block-drag-handle, .block-remove-btn, .photo-align-bar, .photo-resize-handle, .photo-resize-handle-v, .page-marker, .op-spacer-label, .spacer-resize-handle';
     const hidden = [];
     op.querySelectorAll(hideSelectors).forEach(el => {
       hidden.push({ el, prev: el.style.display });
@@ -1433,8 +1455,8 @@ async function exportPDF() {
     // Wait a tick for reflow
     await new Promise(r => setTimeout(r, 50));
 
-    // Render full page to canvas at 2x for sharp text
-    const scale = 2;
+    // Render full page to canvas at 3x for sharp text and photos
+    const scale = 3;
     const canvas = await html2canvas(op, {
       scale: scale,
       useCORS: true,
@@ -1445,6 +1467,14 @@ async function exportPDF() {
       height: op.scrollHeight,
       windowWidth: op.scrollWidth,
       windowHeight: op.scrollHeight,
+      imageTimeout: 0,
+      onclone: function(clonedDoc) {
+        const clonedOp = clonedDoc.getElementById('onepager');
+        if (clonedOp) {
+          clonedOp.style.transform = 'none';
+          clonedOp.style.transformOrigin = 'top left';
+        }
+      }
     });
 
     // Restore object-fit images
@@ -1501,18 +1531,31 @@ async function exportPDF() {
         ctx.drawImage(canvas, 0, srcY, pageWidthPx, srcH, 0, 0, pageWidthPx, srcH);
       }
 
-      // Use PNG for sharp text (no JPEG artifacts on text)
-      pdf.addImage(pageCanvas.toDataURL('image/png'), 'PNG', 0, 0, A4_W_MM, A4_H_MM);
+      // Use JPEG at high quality for photos, PNG fallback for text-only pages
+      pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, A4_W_MM, A4_H_MM, undefined, 'FAST');
     }
 
     // File name from client name
     const client = getField('clientName') || 'One-Pager';
     const safe = client.replace(/[^a-zA-Z0-9áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ ]/g, '').replace(/\s+/g, '_');
-    pdf.save(safe + '_CC.pdf');
+
+    // Use blob URL + link click to avoid tab navigation issues
+    const pdfBlob = pdf.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = safe + '_CC.pdf';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }, 1000);
 
   } catch (err) {
     console.error('PDF export error:', err);
-    alert('Chyba při generování PDF. Zkuste to znovu.');
+    alert('Chyba při generování PDF: ' + err.message + '\nVáš draft zůstává zachovaný.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = origText;
@@ -2188,6 +2231,7 @@ function update() {
 
   // Arrange draggable blocks (extract products, reorder, add handles)
   arrangeBlocks();
+  renderSpacerList();
 }
 
 // ════════════════════════════════════════════════
@@ -2228,6 +2272,71 @@ function addSpacer() {
   }
   saveStorage();
   update();
+}
+
+function renderSpacerList() {
+  const container = document.getElementById('spacerList');
+  if (!container) return;
+  const spacerBlocks = extraBlocks.filter(b => b.type === 'spacer');
+  if (spacerBlocks.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = '';
+  spacerBlocks.forEach((b, idx) => {
+    const row = document.createElement('div');
+    row.className = 'spacer-row';
+
+    const lbl = document.createElement('label');
+    lbl.textContent = 'Mezera ' + (idx + 1);
+    row.appendChild(lbl);
+
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.min = '10';
+    range.max = '600';
+    range.value = b.height || 60;
+
+    const num = document.createElement('input');
+    num.type = 'number';
+    num.min = '10';
+    num.max = '2000';
+    num.value = b.height || 60;
+
+    const pxLabel = document.createElement('span');
+    pxLabel.textContent = 'px';
+    pxLabel.style.cssText = 'font-size:11px;color:var(--g400);font-weight:600;';
+
+    function applyHeight(val) {
+      const v = Math.max(10, Math.min(2000, parseInt(val) || 60));
+      b.height = v;
+      range.value = Math.min(v, 600);
+      num.value = v;
+      const el = document.querySelector('[data-block-id="spacer_' + b.id + '"]');
+      if (el) {
+        el.style.height = v + 'px';
+        const spacerLabel = el.querySelector('.op-spacer-label');
+        if (spacerLabel && !spacerLabel.querySelector('input')) {
+          spacerLabel.textContent = 'Mezera ' + v + ' px';
+        }
+      }
+      saveStorage();
+      updatePageMarkers();
+    }
+
+    range.addEventListener('input', () => { num.value = range.value; applyHeight(range.value); });
+    num.addEventListener('input', () => applyHeight(num.value));
+    num.addEventListener('blur', () => applyHeight(num.value));
+
+    const del = document.createElement('button');
+    del.className = 'spacer-del';
+    del.innerHTML = '×';
+    del.title = 'Odstranit mezeru';
+    del.onclick = () => removeExtraBlock(b.id);
+
+    row.appendChild(range);
+    row.appendChild(num);
+    row.appendChild(pxLabel);
+    row.appendChild(del);
+    container.appendChild(row);
+  });
 }
 
 function removeExtraBlock(id) {
@@ -2398,6 +2507,7 @@ function initSpacerResizeV(handle, el, blockData, label) {
       document.body.style.userSelect = '';
       saveStorage();
       updatePageMarkers();
+      renderSpacerList();
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     }
