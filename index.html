@@ -877,14 +877,46 @@
     .op-editable {
       cursor: text; border-radius: 3px;
       transition: background .12s, outline .12s;
+      min-height: 1em;
     }
     .op-editable:hover {
       background: rgba(59,130,246,.07);
       outline: 1.5px dashed rgba(59,130,246,.35);
       outline-offset: 2px;
     }
+    .op-editable:focus {
+      background: rgba(59,130,246,.05);
+      outline: 2px solid rgba(59,130,246,.45);
+      outline-offset: 2px;
+    }
+    .op-editable:empty::before {
+      content: attr(data-placeholder);
+      color: var(--g300); font-style: italic; pointer-events: none;
+    }
     @media print {
       .op-editable { cursor: default !important; outline: none !important; background: transparent !important; }
+      .op-editable:empty { display: none !important; }
+    }
+
+    /* Floating format toolbar */
+    .format-toolbar {
+      position: fixed; z-index: 9999;
+      display: none; align-items: center; gap: 2px;
+      background: var(--black); border-radius: 8px;
+      padding: 4px 6px; box-shadow: 0 4px 16px rgba(0,0,0,.25);
+      transform: translateX(-50%);
+    }
+    .format-toolbar.visible { display: flex; }
+    .format-toolbar button {
+      background: none; border: none; cursor: pointer;
+      color: rgba(255,255,255,.7); font-size: 13px; font-family: 'Inter', sans-serif;
+      font-weight: 600; padding: 4px 8px; border-radius: 4px;
+      line-height: 1; transition: all .1s;
+    }
+    .format-toolbar button:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .format-toolbar button.active { background: rgba(255,255,255,.2); color: #fff; }
+    .format-toolbar .tb-sep {
+      width: 1px; height: 18px; background: rgba(255,255,255,.15); margin: 0 2px;
     }
 
     /* ═══ PRINT ═══ */
@@ -981,46 +1013,21 @@
       <div class="sep">Kampaň</div>
 
       <div class="field">
-        <label class="lbl">Klient / firma</label>
-        <input type="text" id="clientName" placeholder="např. Acme s.r.o." oninput="update()">
-      </div>
-      <div class="field">
-        <label class="lbl">Popis spolupráce</label>
-        <input type="text" id="collabTitle" placeholder="např. Partnerství People First 2025" oninput="update()">
-      </div>
-      <div class="field">
         <label class="lbl">Hlavní cover fotka</label>
         <div class="cover-pick" id="mainCoverPick" onclick="openPhotoPicker('main')">
           <img id="mainCoverImg" style="display:none">
           <span class="cover-pick-label">📷 Vybrat z fotobanky</span>
         </div>
       </div>
-
-      <div class="sep">Detail kampaně</div>
-
-      <div class="camp-detail-row" id="campDetailRow">
-        <div class="field">
-          <label class="lbl">Popis kampaně</label>
-          <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('campDesc')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('campDesc')"><b>B</b></button></div>
-            <textarea id="campDesc" class="bullet-ta" placeholder="Co kampaň zahrnuje a jaký je její cíl…" oninput="update()"></textarea>
-          </div>
-        </div>
-        <div class="field camp-side-col">
-          <label class="lbl">Cílová skupina <span class="lbl-opt">(volitelné)</span></label>
-          <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('targetGroup')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('targetGroup')"><b>B</b></button></div>
-            <textarea id="targetGroup" class="bullet-ta" style="min-height:52px" placeholder="např. Tech profesionálové 25–45" oninput="update()"></textarea>
-          </div>
-        </div>
-        <div class="field camp-side-col">
-          <label class="lbl">Timing <span class="lbl-opt">(volitelné)</span></label>
-          <div class="ta-wrap">
-            <div class="ta-btn-row"><button class="bullet-btn" type="button" onclick="insertBullet('timing')">• odrážky</button><button class="bullet-btn bold-btn" type="button" onclick="insertBold('timing')"><b>B</b></button></div>
-            <textarea id="timing" class="bullet-ta" style="min-height:52px" placeholder="např. Q2 2025" oninput="update()"></textarea>
-          </div>
-        </div>
+      <div style="background:var(--g50);border:1px solid var(--g200);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--g400);line-height:1.5">
+        Texty editujte přímo v náhledu dokumentu vpravo. Klikněte na text a začněte psát. Při označení textu se zobrazí formátovací lišta: <b>B</b> <i>I</i> <u>U</u> <s>S</s> • odrážky
       </div>
+      <!-- Hidden fields for backward compat with save/load -->
+      <input type="hidden" id="clientName">
+      <input type="hidden" id="collabTitle">
+      <textarea id="campDesc" style="display:none"></textarea>
+      <textarea id="targetGroup" style="display:none"></textarea>
+      <textarea id="timing" style="display:none"></textarea>
 
       <div class="sep" id="sepProdukty">Formáty</div>
 
@@ -1033,8 +1040,8 @@
         <button class="btn-add-product" onclick="addSpacer()" style="flex:1">+ Mezera</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <button class="btn-add-product" onclick="addHeaderBar('top')" style="flex:1">+ Hlavička (logo + klient)</button>
-        <button class="btn-add-product" onclick="addHeaderBar('bottom')" style="flex:1">+ Patička (jen logo)</button>
+        <button class="btn-add-product" onclick="addHeaderBar('top')" style="flex:1;text-align:center;line-height:1.3">+ Hlavička<br><span style="font-size:9px;font-weight:500;color:var(--g400);letter-spacing:0">logo CC + název klienta</span></button>
+        <button class="btn-add-product" onclick="addHeaderBar('bottom')" style="flex:1;text-align:center;line-height:1.3">+ Patička<br><span style="font-size:9px;font-weight:500;color:var(--g400);letter-spacing:0">logo CC</span></button>
       </div>
       <div class="headerbar-list" id="headerBarList"></div>
       <div class="spacer-list" id="spacerList"></div>
@@ -1113,7 +1120,7 @@
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 20.66" width="110" height="13">
       <g fill="#ffffff"><path d="M15.49,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,12.79,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7A5.93,5.93,0,0,1,.85,16.65a8.62,8.62,0,0,1-.62-2A14.26,14.26,0,0,1,0,12.56c0-.75,0-1.49,0-2.24S0,8.81,0,8.09A11.52,11.52,0,0,1,.23,6,8.23,8.23,0,0,1,.85,4,5.61,5.61,0,0,1,2.08,2.29,7.69,7.69,0,0,1,4.58.59,8.22,8.22,0,0,1,7.77,0,8.55,8.55,0,0,1,10.5.41a6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93H10.4a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="15.49 19.92 15.49 16.13 23.41 4.37 15.83 4.37 15.83 0 29.51 0 29.51 3.79 21.56 15.55 29.51 15.55 29.51 19.92 15.49 19.92"/><polygon points="30.25 19.89 30.25 0 44.26 0 44.26 4.37 35.32 4.37 35.32 7.7 42.96 7.7 42.96 12.07 35.32 12.07 35.32 15.55 44.26 15.55 44.26 19.92 30.25 19.92 30.25 19.89"/><path d="M61.23,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,58.53,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,46,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,53.51,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29A13.1,13.1,0,0,0,51,14.05a4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="72.4 19.92 72.4 12.03 67.03 12.03 67.03 19.92 61.97 19.92 61.97 0 67.03 0 67.03 7.66 72.4 7.66 72.4 0 77.46 0 77.46 19.92 72.4 19.92"/><path d="M95.16,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,92.46,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,79.9,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,87.44,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Zm11.1,5.87-3.62-7.39h-1.71v7.39h-5V0H104a7.42,7.42,0,0,1,3,.55A6.71,6.71,0,0,1,109.21,2,6.08,6.08,0,0,1,110.55,4,6.27,6.27,0,0,1,111,6.39a5.38,5.38,0,0,1-.31,1.85,6.94,6.94,0,0,1-.78,1.5,6.4,6.4,0,0,1-1.06,1.13,7.79,7.79,0,0,1-1.19.75l4.45,8.29h-5.87ZM106,6.36a2,2,0,0,0-.57-1.4,2.15,2.15,0,0,0-1.6-.63H101v4h2.84a2,2,0,0,0,1.6-.63A1.86,1.86,0,0,0,106,6.36Zm22.35,6.93a7.07,7.07,0,0,1-4.77,6.84,9,9,0,0,1-3,.52,8.66,8.66,0,0,1-3-.52,7.14,7.14,0,0,1-2.45-1.47,7,7,0,0,1-2.27-5.37V0h5V13.17a3.14,3.14,0,0,0,.7,2.22,2.54,2.54,0,0,0,2,.77,2.7,2.7,0,0,0,2-.77,3.07,3.07,0,0,0,.72-2.22V0h5V13.3Z"/><polygon points="141.81 19.92 135.45 9.9 135.45 19.92 130.57 19.92 130.57 0 134.83 0 141.19 10.02 141.19 0 146.07 0 146.07 19.92 141.81 19.92"/><path d="M163.77,14a8.73,8.73,0,0,1-1,2.93A7.18,7.18,0,0,1,161.07,19a6.39,6.39,0,0,1-2.29,1.23,9.33,9.33,0,0,1-2.73.41,8.22,8.22,0,0,1-3.19-.59,7.69,7.69,0,0,1-2.5-1.7,5.93,5.93,0,0,1-1.24-1.72,8.62,8.62,0,0,1-.62-2,14.26,14.26,0,0,1-.21-2.13c0-.75,0-1.49,0-2.24s0-1.52,0-2.24A11.52,11.52,0,0,1,148.51,6a8.23,8.23,0,0,1,.62-2,5.61,5.61,0,0,1,1.24-1.72,7.69,7.69,0,0,1,2.5-1.7A8.22,8.22,0,0,1,156.05,0a8.55,8.55,0,0,1,2.73.41,6.39,6.39,0,0,1,2.29,1.23,7.24,7.24,0,0,1,1.72,2.08,8.73,8.73,0,0,1,1,2.93h-5.1a3.74,3.74,0,0,0-.8-1.52,2.28,2.28,0,0,0-1.8-.67,2.78,2.78,0,0,0-1.18.23,2.15,2.15,0,0,0-.8.62,3.4,3.4,0,0,0-.31.51,2.44,2.44,0,0,0-.23.82,8.72,8.72,0,0,0-.15,1.41c0,.59-.05,1.34-.05,2.29s0,1.7.05,2.29a13.1,13.1,0,0,0,.15,1.41,4.88,4.88,0,0,0,.23.82c.1.18.21.36.31.51a2,2,0,0,0,.8.62,2.78,2.78,0,0,0,1.18.23,2.28,2.28,0,0,0,1.8-.67,3.74,3.74,0,0,0,.8-1.52h5.1Z"/><polygon points="174.94 19.92 174.94 12.03 169.57 12.03 169.57 19.92 164.51 19.92 164.51 0 169.57 0 169.57 7.66 174.94 7.66 174.94 0 180 0 180 19.92 174.94 19.92"/></g>
     </svg>
-    <div class="op-client-name op-editable" id="opClient" onclick="focusSidebarField('clientName')">Návrh spolupráce</div>
+    <div class="op-client-name op-editable" id="opClient" contenteditable="true" data-placeholder="Název klienta" data-field="clientName"></div>
   </div>
 
   <!-- Cover -->
@@ -1122,7 +1129,7 @@
     <img id="opCoverImg" style="display:none">
     <div class="op-cover-caption">
       <div class="op-cover-tag">Mediální partnerství</div>
-      <div class="op-cover-title op-editable" id="opCollabTitle" onclick="focusSidebarField('collabTitle')">Nadpis spolupráce</div>
+      <div class="op-cover-title op-editable" id="opCollabTitle" contenteditable="true" data-placeholder="Nadpis spolupráce" data-field="collabTitle"></div>
     </div>
   </div>
 
@@ -1132,15 +1139,15 @@
     <div class="op-camp-grid" id="opCampGrid">
       <div class="op-camp-col" id="opCampDescCol">
         <div class="op-camp-label">Popis kampaně</div>
-        <div class="op-camp-text op-editable" id="opCampDesc" onclick="focusSidebarField('campDesc')"></div>
+        <div class="op-camp-text op-editable" id="opCampDesc" contenteditable="true" data-placeholder="Popis kampaně…" data-field="campDesc"></div>
       </div>
       <div class="op-camp-col" id="opTargetGroupCol">
         <div class="op-camp-label">Cílová skupina</div>
-        <div class="op-camp-text op-editable" id="opTargetGroup" onclick="focusSidebarField('targetGroup')"></div>
+        <div class="op-camp-text op-editable" id="opTargetGroup" contenteditable="true" data-placeholder="Cílová skupina…" data-field="targetGroup"></div>
       </div>
       <div class="op-camp-col" id="opTimingCol">
         <div class="op-camp-label">Timing</div>
-        <div class="op-camp-text op-editable" id="opTiming" onclick="focusSidebarField('timing')"></div>
+        <div class="op-camp-text op-editable" id="opTiming" contenteditable="true" data-placeholder="Timing…" data-field="timing"></div>
       </div>
     </div>
 
@@ -1204,6 +1211,16 @@
 
 </div><!-- .op -->
 </div><!-- .preview-wrap -->
+
+<!-- Floating format toolbar -->
+<div class="format-toolbar" id="formatToolbar">
+  <button data-cmd="bold" title="Tučné (Ctrl+B)"><b>B</b></button>
+  <button data-cmd="italic" title="Kurzíva (Ctrl+I)"><i>I</i></button>
+  <button data-cmd="underline" title="Podtržení (Ctrl+U)"><u>U</u></button>
+  <button data-cmd="strikeThrough" title="Přeškrtnutí"><s>S</s></button>
+  <div class="tb-sep"></div>
+  <button data-cmd="insertUnorderedList" title="Odrážky">•</button>
+</div>
 
 <script>
 // ════════════════════════════════════════════════
@@ -2057,8 +2074,12 @@ function applyContactPreset(key) {
 // UPDATE (live preview)
 // ════════════════════════════════════════════════
 function update() {
-  // Header
-  setText('opClient', getField('clientName') || 'Návrh spolupráce');
+  // Header — only update if not currently being edited
+  const opClient = document.getElementById('opClient');
+  if (opClient && document.activeElement !== opClient) {
+    const clientVal = getField('clientName');
+    if (clientVal && opClient.innerText !== clientVal) opClient.textContent = clientVal;
+  }
 
   // Cover
   const img = document.getElementById('opCoverImg');
@@ -2066,21 +2087,24 @@ function update() {
   if (mainPhoto) { img.src = mainPhoto; img.style.display = 'block'; ph.style.display = 'none'; }
   else           { img.style.display = 'none'; ph.style.display = 'flex'; }
 
-  // Collab title on cover
-  setText('opCollabTitle', getField('collabTitle') || 'Nadpis spolupráce');
+  // Collab title — only update if not being edited
+  const opCollabTitle = document.getElementById('opCollabTitle');
+  if (opCollabTitle && document.activeElement !== opCollabTitle) {
+    const collabVal = getField('collabTitle');
+    if (collabVal && opCollabTitle.innerText !== collabVal) opCollabTitle.textContent = collabVal;
+  }
 
-  // Campaign detail — optional cols
-  const campDesc    = getField('campDesc');
-  const targetGroup = getField('targetGroup');
-  const timing      = getField('timing');
+  // Campaign detail — check contenteditable content, not sidebar fields
+  const campDescEl = document.getElementById('opCampDesc');
+  const targetGroupEl = document.getElementById('opTargetGroup');
+  const timingEl = document.getElementById('opTiming');
+  const campDesc    = campDescEl ? campDescEl.innerText.trim() : '';
+  const targetGroup = targetGroupEl ? targetGroupEl.innerText.trim() : '';
+  const timing      = timingEl ? timingEl.innerText.trim() : '';
 
-  setHtml('opCampDesc',    renderText(campDesc));
-  setHtml('opTargetGroup', renderText(targetGroup));
-  setHtml('opTiming',      renderText(timing));
-
-  document.getElementById('opCampDescCol').style.display    = campDesc    ? '' : 'none';
-  document.getElementById('opTargetGroupCol').style.display = targetGroup ? '' : 'none';
-  document.getElementById('opTimingCol').style.display      = timing      ? '' : 'none';
+  document.getElementById('opCampDescCol').style.display    = '';
+  document.getElementById('opTargetGroupCol').style.display = '';
+  document.getElementById('opTimingCol').style.display      = '';
 
   // When both side columns are empty, expand campDesc to full width
   const hasSideCols = targetGroup || timing;
@@ -2165,49 +2189,59 @@ function update() {
       const hasPrice = p.price && p.price.trim();
 
       // Dosahy — float right, musí být první v DOMu
-      if (hasDos) {
-        const dosBox = document.createElement('div');
-        dosBox.className = 'op-product-dosahy op-editable ' + (p.dosahyAlign || 'text-right');
-        dosBox.innerHTML = `<span class="op-product-dosahy-label">Dosahy</span>${renderText(p.dosahy)}`;
-        dosBox.onclick = () => focusSidebarField('dosahy_' + p.id, p.id);
-        details.appendChild(dosBox);
-      }
+      const dosBox = document.createElement('div');
+      dosBox.className = 'op-product-dosahy op-editable ' + (p.dosahyAlign || 'text-right');
+      dosBox.setAttribute('contenteditable', 'true');
+      dosBox.dataset.prodId = p.id;
+      dosBox.dataset.prodField = 'dosahy';
+      dosBox.dataset.placeholder = 'Dosahy…';
+      if (p.dosahyHtml) dosBox.innerHTML = p.dosahyHtml;
+      else if (p.dosahy && p.dosahy.trim()) dosBox.innerHTML = `<span class="op-product-dosahy-label">Dosahy</span>${renderText(p.dosahy)}`;
+      details.appendChild(dosBox);
 
       const name = document.createElement('div');
       name.className = 'op-product-name op-editable';
-      name.textContent = p.name || 'Název formátu';
-      name.onclick = () => focusSidebarField('pname_' + p.id, p.id);
+      name.setAttribute('contenteditable', 'true');
+      name.dataset.prodId = p.id;
+      name.dataset.prodField = 'name';
+      name.dataset.placeholder = 'Název formátu';
+      name.textContent = p.name || '';
       details.appendChild(name);
 
-      if (p.desc) {
-        const desc = document.createElement('div');
-        desc.className = 'op-product-desc op-editable ' + (p.descAlign || 'text-left');
-        desc.innerHTML = renderText(p.desc);
-        desc.onclick = () => focusSidebarField('desc_' + p.id, p.id);
-        details.appendChild(desc);
-      }
+      const desc = document.createElement('div');
+      desc.className = 'op-product-desc op-editable ' + (p.descAlign || 'text-left');
+      desc.setAttribute('contenteditable', 'true');
+      desc.dataset.prodId = p.id;
+      desc.dataset.prodField = 'desc';
+      desc.dataset.placeholder = 'Popis formátu…';
+      if (p.descHtml) desc.innerHTML = p.descHtml;
+      else if (p.desc) desc.innerHTML = renderText(p.desc);
+      details.appendChild(desc);
 
       // Bottom sekce — přes celou šířku (col 1/-1), zapojeni + cena ve sloupci
       let bottomEl = null;
-      if (hasZap || hasPrice) {
-        bottomEl = document.createElement('div');
-        bottomEl.className = 'op-product-bottom';
-        if (hasZap) {
-          const zap = document.createElement('div');
-          zap.className = 'op-product-zapojeni op-editable ' + (p.zapojeniAlign || 'text-left');
-          zap.innerHTML = `<span class="op-product-zapojeni-label">Detail: </span>${renderText(p.zapojeni)}`;
-          zap.onclick = () => focusSidebarField('zapojeni_' + p.id, p.id);
-          bottomEl.appendChild(zap);
-        } else {
-          bottomEl.appendChild(document.createElement('div'));
-        }
-        if (hasPrice) {
-          const price = document.createElement('div');
-          price.className = 'op-product-price op-editable';
-          price.textContent = p.price;
-          price.onclick = () => focusSidebarField('pprice_' + p.id, p.id);
-          bottomEl.appendChild(price);
-        }
+      bottomEl = document.createElement('div');
+      bottomEl.className = 'op-product-bottom';
+      {
+        const zap = document.createElement('div');
+        zap.className = 'op-product-zapojeni op-editable ' + (p.zapojeniAlign || 'text-left');
+        zap.setAttribute('contenteditable', 'true');
+        zap.dataset.prodId = p.id;
+        zap.dataset.prodField = 'zapojeni';
+        zap.dataset.placeholder = 'Detail zapojení…';
+        if (p.zapojeniHtml) zap.innerHTML = p.zapojeniHtml;
+        else if (p.zapojeni && p.zapojeni.trim()) zap.innerHTML = `<span class="op-product-zapojeni-label">Detail: </span>${renderText(p.zapojeni)}`;
+        bottomEl.appendChild(zap);
+      }
+      {
+        const price = document.createElement('div');
+        price.className = 'op-product-price op-editable';
+        price.setAttribute('contenteditable', 'true');
+        price.dataset.prodId = p.id;
+        price.dataset.prodField = 'price';
+        price.dataset.placeholder = 'Cena…';
+        price.textContent = p.price || '';
+        bottomEl.appendChild(price);
       }
 
       let urlEl = null;
@@ -2961,6 +2995,189 @@ document.addEventListener('keydown', e => {
 });
 
 // pushContactToBottom removed — PDF export is now pixel-based via html2canvas+jsPDF
+
+// ════════════════════════════════════════════════
+// FLOATING FORMAT TOOLBAR & CONTENTEDITABLE
+// ════════════════════════════════════════════════
+(function() {
+  const toolbar = document.getElementById('formatToolbar');
+  if (!toolbar) return;
+
+  let activeEditable = null;
+
+  toolbar.querySelectorAll('button[data-cmd]').forEach(btn => {
+    btn.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      const cmd = this.dataset.cmd;
+      document.execCommand(cmd, false, null);
+      updateToolbarState();
+      syncEditableToStorage();
+    });
+  });
+
+  function updateToolbarState() {
+    toolbar.querySelectorAll('button[data-cmd]').forEach(btn => {
+      const cmd = btn.dataset.cmd;
+      btn.classList.toggle('active', document.queryCommandState(cmd));
+    });
+  }
+
+  function showToolbar() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      const el = activeEditable;
+      if (el) {
+        const elRect = el.getBoundingClientRect();
+        toolbar.style.left = (elRect.left + elRect.width / 2) + 'px';
+        toolbar.style.top = (elRect.top - 42) + 'px';
+      }
+    } else {
+      toolbar.style.left = (rect.left + rect.width / 2) + 'px';
+      toolbar.style.top = (rect.top - 42) + 'px';
+    }
+    toolbar.classList.add('visible');
+    updateToolbarState();
+  }
+
+  function hideToolbar() {
+    toolbar.classList.remove('visible');
+  }
+
+  function isEditable(el) {
+    return el && el.closest && el.closest('[contenteditable="true"]');
+  }
+
+  document.addEventListener('selectionchange', function() {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) { hideToolbar(); return; }
+    const node = sel.anchorNode;
+    const editable = node && (node.nodeType === 3 ? node.parentElement : node);
+    const editableContainer = editable && editable.closest('[contenteditable="true"]');
+    if (editableContainer) {
+      activeEditable = editableContainer;
+      showToolbar();
+    } else {
+      hideToolbar();
+    }
+  });
+
+  document.addEventListener('mousedown', function(e) {
+    if (toolbar.contains(e.target)) return;
+    if (!isEditable(e.target)) {
+      hideToolbar();
+    }
+  });
+
+  // Sync contenteditable → sidebar fields + localStorage
+  function syncEditableToStorage() {
+    if (!activeEditable) return;
+    const field = activeEditable.dataset.field;
+    const prodField = activeEditable.dataset.prodField;
+    const prodId = activeEditable.dataset.prodId;
+
+    if (field) {
+      const sidebarEl = document.getElementById(field);
+      if (sidebarEl) {
+        sidebarEl.value = activeEditable.innerText;
+      }
+    }
+    if (prodId && prodField) {
+      const p = products.find(x => x.id === parseInt(prodId));
+      if (p) {
+        if (prodField === 'name') p.name = activeEditable.innerText;
+        else if (prodField === 'desc') p.descHtml = activeEditable.innerHTML;
+        else if (prodField === 'zapojeni') p.zapojeniHtml = activeEditable.innerHTML;
+        else if (prodField === 'dosahy') p.dosahyHtml = activeEditable.innerHTML;
+        else if (prodField === 'price') p.price = activeEditable.innerText;
+      }
+    }
+
+    // Save rich HTML content to localStorage
+    saveRichContent();
+    saveStorage();
+  }
+
+  // Listen for input on any contenteditable
+  document.addEventListener('input', function(e) {
+    const editable = e.target.closest && e.target.closest('[contenteditable="true"]');
+    if (editable) {
+      activeEditable = editable;
+      syncEditableToStorage();
+      updatePageMarkers();
+
+      // Update headerbar client names when clientName changes
+      if (editable.dataset.field === 'clientName') {
+        document.querySelectorAll('.header-bar-client').forEach(el => {
+          el.textContent = editable.innerText || 'Návrh spolupráce';
+        });
+      }
+
+      // Show/hide camp columns based on content
+      const field = editable.dataset.field;
+      if (field === 'campDesc' || field === 'targetGroup' || field === 'timing') {
+        const hasDesc = document.getElementById('opCampDesc').innerText.trim();
+        const hasTG = document.getElementById('opTargetGroup').innerText.trim();
+        const hasTiming = document.getElementById('opTiming').innerText.trim();
+        document.getElementById('opCampDescCol').style.display = hasDesc ? '' : '';
+        document.getElementById('opTargetGroupCol').style.display = hasTG ? '' : '';
+        document.getElementById('opTimingCol').style.display = hasTiming ? '' : '';
+        const anyCamp = hasDesc || hasTG || hasTiming;
+        document.getElementById('opCampHeading').style.display = anyCamp ? '' : 'none';
+        document.getElementById('opCampGrid').style.display = anyCamp ? '' : 'none';
+        const hasSideCols = hasTG || hasTiming;
+        document.getElementById('opCampGrid').classList.toggle('single-col', !hasSideCols);
+      }
+    }
+  });
+
+  // Keyboard shortcuts within contenteditable
+  document.addEventListener('keydown', function(e) {
+    if (!activeEditable || !activeEditable.matches('[contenteditable="true"]')) return;
+    if (!isEditable(document.activeElement) && document.activeElement !== activeEditable) return;
+
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'b') { e.preventDefault(); document.execCommand('bold'); updateToolbarState(); syncEditableToStorage(); }
+      if (e.key === 'i') { e.preventDefault(); document.execCommand('italic'); updateToolbarState(); syncEditableToStorage(); }
+      if (e.key === 'u') { e.preventDefault(); document.execCommand('underline'); updateToolbarState(); syncEditableToStorage(); }
+    }
+  });
+
+  // Save/load rich HTML content
+  const LS_RICH = 'cc_onepager_rich_content';
+
+  function saveRichContent() {
+    const data = {};
+    document.querySelectorAll('#onepager [contenteditable="true"][data-field]').forEach(el => {
+      data[el.dataset.field] = el.innerHTML;
+    });
+    localStorage.setItem(LS_RICH, JSON.stringify(data));
+  }
+
+  function loadRichContent() {
+    try {
+      const raw = localStorage.getItem(LS_RICH);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      Object.keys(data).forEach(field => {
+        const el = document.querySelector('#onepager [contenteditable="true"][data-field="' + field + '"]');
+        if (el && data[field]) {
+          el.innerHTML = data[field];
+        }
+      });
+    } catch(e) {}
+  }
+
+  // Expose for global use
+  window.saveRichContent = saveRichContent;
+  window.loadRichContent = loadRichContent;
+  window.syncEditableToStorage = syncEditableToStorage;
+
+  // Load on init
+  loadRichContent();
+})();
 </script>
 
 </body>
