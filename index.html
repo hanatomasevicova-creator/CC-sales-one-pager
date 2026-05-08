@@ -1019,8 +1019,18 @@
           <span class="cover-pick-label">📷 Vybrat z fotobanky</span>
         </div>
       </div>
-      <div style="background:var(--g50);border:1px solid var(--g200);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--g400);line-height:1.5">
-        Texty editujte přímo v náhledu dokumentu vpravo. Klikněte na text a začněte psát. Při označení textu se zobrazí formátovací lišta: <b>B</b> <i>I</i> <u>U</u> <s>S</s> • odrážky
+      <div style="background:var(--g50);border:1px solid var(--g200);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--g400);line-height:1.5">
+        Texty editujte přímo v náhledu dokumentu vpravo. Při označení textu se zobrazí lišta: <b>B</b> <i>I</i> <u>U</u> <s>S</s> • odrážky
+      </div>
+
+      <div class="sep">Detail kampaně — volitelné sloupce</div>
+      <div style="display:flex;gap:12px;margin-bottom:14px;font-size:12px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--g600)">
+          <input type="checkbox" id="toggleTargetGroup" onchange="toggleCampCol('opTargetGroupCol', this.checked, 'opTargetGroup')"> Cílová skupina
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--g600)">
+          <input type="checkbox" id="toggleTiming" onchange="toggleCampCol('opTimingCol', this.checked, 'opTiming')"> Timing
+        </label>
       </div>
       <!-- Hidden fields for backward compat with save/load -->
       <input type="hidden" id="clientName">
@@ -1858,6 +1868,20 @@ function buildPresetOptions(selectedId) {
   return html;
 }
 
+function toggleCampCol(colId, show, editableId) {
+  const col = document.getElementById(colId);
+  if (!col) return;
+  col.style.display = show ? '' : 'none';
+  if (show) {
+    const editable = document.getElementById(editableId);
+    if (editable) setTimeout(() => editable.focus(), 50);
+  }
+  const tgVisible = document.getElementById('opTargetGroupCol').style.display !== 'none';
+  const timVisible = document.getElementById('opTimingCol').style.display !== 'none';
+  document.getElementById('opCampGrid').classList.toggle('single-col', !tgVisible && !timVisible);
+  saveStorage();
+}
+
 function focusSidebarField(fieldId, prodId) {
   switchTab('form');
   if (prodId) {
@@ -2094,22 +2118,20 @@ function update() {
     if (collabVal && opCollabTitle.innerText !== collabVal) opCollabTitle.textContent = collabVal;
   }
 
-  // Campaign detail — always visible so user can click and type
-  const campDescEl = document.getElementById('opCampDesc');
-  const targetGroupEl = document.getElementById('opTargetGroup');
-  const timingEl = document.getElementById('opTiming');
-  const targetGroup = targetGroupEl ? targetGroupEl.innerText.trim() : '';
-  const timing      = timingEl ? timingEl.innerText.trim() : '';
+  // Campaign detail — always visible; optional cols controlled by checkboxes
+  const tgCheck = document.getElementById('toggleTargetGroup');
+  const timCheck = document.getElementById('toggleTiming');
+  const tgVisible = tgCheck && tgCheck.checked;
+  const timVisible = timCheck && timCheck.checked;
 
-  document.getElementById('opCampDescCol').style.display    = '';
-  document.getElementById('opTargetGroupCol').style.display = '';
-  document.getElementById('opTimingCol').style.display      = '';
+  document.getElementById('opCampDescCol').style.display = '';
+  document.getElementById('opTargetGroupCol').style.display = tgVisible ? '' : 'none';
+  document.getElementById('opTimingCol').style.display = timVisible ? '' : 'none';
   document.getElementById('opCampHeading').style.display = '';
   document.getElementById('opCampGrid').style.display    = '';
 
-  // When both side columns are empty, expand campDesc to full width
-  const hasSideCols = targetGroup || timing;
-  document.getElementById('opCampGrid').classList.toggle('single-col', !hasSideCols);
+  // When both side columns are hidden, expand campDesc to full width
+  document.getElementById('opCampGrid').classList.toggle('single-col', !tgVisible && !timVisible);
 
   // Auto-sum product prices into totalValue
   const pricedProducts = products.filter(p => p.price && p.price.trim());
@@ -3115,17 +3137,7 @@ document.addEventListener('keydown', e => {
       // Show/hide camp columns based on content
       const field = editable.dataset.field;
       if (field === 'campDesc' || field === 'targetGroup' || field === 'timing') {
-        const hasDesc = document.getElementById('opCampDesc').innerText.trim();
-        const hasTG = document.getElementById('opTargetGroup').innerText.trim();
-        const hasTiming = document.getElementById('opTiming').innerText.trim();
-        document.getElementById('opCampDescCol').style.display = hasDesc ? '' : '';
-        document.getElementById('opTargetGroupCol').style.display = hasTG ? '' : '';
-        document.getElementById('opTimingCol').style.display = hasTiming ? '' : '';
-        const anyCamp = hasDesc || hasTG || hasTiming;
-        document.getElementById('opCampHeading').style.display = anyCamp ? '' : 'none';
-        document.getElementById('opCampGrid').style.display = anyCamp ? '' : 'none';
-        const hasSideCols = hasTG || hasTiming;
-        document.getElementById('opCampGrid').classList.toggle('single-col', !hasSideCols);
+        // Optional cols visibility managed by checkboxes — no auto-hide here
       }
     }
   });
@@ -3174,6 +3186,14 @@ document.addEventListener('keydown', e => {
 
   // Load on init
   loadRichContent();
+
+  // Auto-check optional column checkboxes if they have saved content
+  const tgEl = document.getElementById('opTargetGroup');
+  const timEl = document.getElementById('opTiming');
+  const tgCb = document.getElementById('toggleTargetGroup');
+  const timCb = document.getElementById('toggleTiming');
+  if (tgCb && tgEl && tgEl.innerText.trim()) tgCb.checked = true;
+  if (timCb && timEl && timEl.innerText.trim()) timCb.checked = true;
 })();
 </script>
 
