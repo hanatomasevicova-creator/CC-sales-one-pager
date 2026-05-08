@@ -212,6 +212,40 @@
     }
     .spacer-row .spacer-del:hover { color: #dc2626; }
 
+    /* Header bar block (black strip with logo) */
+    .op-header-bar {
+      background: var(--black);
+      padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative;
+    }
+    .op-header-bar svg { flex-shrink: 0; }
+    .op-header-bar .header-bar-client {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; color: rgba(255,255,255,.45);
+    }
+
+    /* Sidebar header-bar controls */
+    .headerbar-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .headerbar-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g50); border: 1px solid var(--g200); border-radius: 6px;
+      padding: 6px 10px; font-size: 12px;
+    }
+    .headerbar-row label { font-weight: 600; color: var(--g600); white-space: nowrap; flex-shrink: 0; }
+    .headerbar-row select {
+      flex: 1; border: 1px solid var(--g200); border-radius: 4px;
+      font-size: 11px; font-family: 'Inter', sans-serif; font-weight: 600;
+      padding: 3px 6px; background: var(--white);
+    }
+    .headerbar-row select:focus { border-color: var(--black); outline: none; }
+    .headerbar-row .headerbar-del {
+      background: none; border: none; cursor: pointer; font-size: 16px;
+      color: var(--g300); padding: 0 2px; line-height: 1;
+    }
+    .headerbar-row .headerbar-del:hover { color: #dc2626; }
+
     /* tips */
     .tips-list { display: flex; flex-direction: column; gap: 7px; }
     .tip-row { display: flex; gap: 6px; align-items: center; }
@@ -998,6 +1032,11 @@
         <button class="btn-add-product" onclick="addPhotoBlock()" style="flex:1">+ Fotka</button>
         <button class="btn-add-product" onclick="addSpacer()" style="flex:1">+ Mezera</button>
       </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="btn-add-product" onclick="addHeaderBar('top')" style="flex:1">+ Hlavička (logo + klient)</button>
+        <button class="btn-add-product" onclick="addHeaderBar('bottom')" style="flex:1">+ Patička (jen logo)</button>
+      </div>
+      <div class="headerbar-list" id="headerBarList"></div>
       <div class="spacer-list" id="spacerList"></div>
 
       <div class="sep">Celková hodnota</div>
@@ -2069,6 +2108,7 @@ function update() {
   document.querySelectorAll('#onepager > [data-block-id^="product_"]').forEach(el => el.remove());
   document.querySelectorAll('#onepager > [data-block-id^="photo_"]').forEach(el => el.remove());
   document.querySelectorAll('#onepager > [data-block-id^="spacer_"]').forEach(el => el.remove());
+  document.querySelectorAll('#onepager > [data-block-id^="headerbar_"]').forEach(el => el.remove());
   const opProducts = document.getElementById('opProducts');
   opProducts.innerHTML = '';
   if (products.length === 0) {
@@ -2232,6 +2272,7 @@ function update() {
   // Arrange draggable blocks (extract products, reorder, add handles)
   arrangeBlocks();
   renderSpacerList();
+  renderHeaderBarList();
 }
 
 // ════════════════════════════════════════════════
@@ -2269,6 +2310,19 @@ function addSpacer() {
     const valueIdx = blockOrder.indexOf('value');
     if (valueIdx >= 0) blockOrder.splice(valueIdx, 0, 'spacer_' + id);
     else blockOrder.push('spacer_' + id);
+  }
+  saveStorage();
+  update();
+}
+
+function addHeaderBar(variant) {
+  const id = ++extraBlockCounter;
+  const b = { id, type: 'headerbar', variant: variant };
+  extraBlocks.push(b);
+  if (blockOrder) {
+    const valueIdx = blockOrder.indexOf('value');
+    if (valueIdx >= 0) blockOrder.splice(valueIdx, 0, 'headerbar_' + id);
+    else blockOrder.push('headerbar_' + id);
   }
   saveStorage();
   update();
@@ -2339,10 +2393,53 @@ function renderSpacerList() {
   });
 }
 
+function renderHeaderBarList() {
+  const container = document.getElementById('headerBarList');
+  if (!container) return;
+  const bars = extraBlocks.filter(b => b.type === 'headerbar');
+  if (bars.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = '';
+  bars.forEach((b, idx) => {
+    const row = document.createElement('div');
+    row.className = 'headerbar-row';
+
+    const lbl = document.createElement('label');
+    lbl.textContent = (idx + 1) + '.';
+    row.appendChild(lbl);
+
+    const sel = document.createElement('select');
+    const optTop = document.createElement('option');
+    optTop.value = 'top';
+    optTop.textContent = 'CzechCrunch + klient';
+    if (b.variant === 'top') optTop.selected = true;
+    sel.appendChild(optTop);
+    const optBottom = document.createElement('option');
+    optBottom.value = 'bottom';
+    optBottom.textContent = 'Jen CzechCrunch';
+    if (b.variant === 'bottom') optBottom.selected = true;
+    sel.appendChild(optBottom);
+    sel.addEventListener('change', () => {
+      b.variant = sel.value;
+      saveStorage();
+      update();
+    });
+    row.appendChild(sel);
+
+    const del = document.createElement('button');
+    del.className = 'headerbar-del';
+    del.innerHTML = '×';
+    del.title = 'Odstranit hlavičku';
+    del.onclick = () => removeExtraBlock(b.id);
+    row.appendChild(del);
+
+    container.appendChild(row);
+  });
+}
+
 function removeExtraBlock(id) {
   extraBlocks = extraBlocks.filter(b => b.id !== id);
   if (blockOrder) {
-    blockOrder = blockOrder.filter(bid => bid !== 'photo_' + id && bid !== 'spacer_' + id);
+    blockOrder = blockOrder.filter(bid => bid !== 'photo_' + id && bid !== 'spacer_' + id && bid !== 'headerbar_' + id);
   }
   saveStorage();
   update();
@@ -2450,6 +2547,33 @@ function createExtraBlockElements(op) {
       removeBtn.className = 'block-remove-btn';
       removeBtn.innerHTML = '×';
       removeBtn.title = 'Odstranit mezeru';
+      removeBtn.onclick = () => removeExtraBlock(b.id);
+      el.appendChild(removeBtn);
+
+    } else if (b.type === 'headerbar') {
+      el = document.createElement('div');
+      el.className = 'op-header-bar';
+      el.setAttribute('data-block-id', blockId);
+
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const logoSvg = document.querySelector('.op-header svg');
+      if (logoSvg) {
+        const clonedSvg = logoSvg.cloneNode(true);
+        el.appendChild(clonedSvg);
+      }
+
+      if (b.variant === 'top') {
+        const clientSpan = document.createElement('div');
+        clientSpan.className = 'header-bar-client';
+        const clientName = getField('clientName') || 'Návrh spolupráce';
+        clientSpan.textContent = clientName;
+        el.appendChild(clientSpan);
+      }
+
+      const removeBtn = document.createElement('div');
+      removeBtn.className = 'block-remove-btn';
+      removeBtn.innerHTML = '×';
+      removeBtn.title = 'Odstranit hlavičku';
       removeBtn.onclick = () => removeExtraBlock(b.id);
       el.appendChild(removeBtn);
     }
