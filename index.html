@@ -539,7 +539,7 @@
 
     /* Spacer block */
     .op-spacer {
-      position: relative; min-height: 20px;
+      position: relative; min-height: 10px;
       background: repeating-linear-gradient(
         45deg, transparent, transparent 8px,
         rgba(0,0,0,.03) 8px, rgba(0,0,0,.03) 16px
@@ -553,12 +553,42 @@
     }
     .op-spacer-label {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      font-size: 9px; color: var(--g300); text-transform: uppercase;
-      letter-spacing: .12em; font-weight: 600; pointer-events: none;
+      font-size: 10px; color: var(--g400); text-transform: uppercase;
+      letter-spacing: .12em; font-weight: 600;
       opacity: 0; transition: opacity .15s;
+      cursor: pointer; pointer-events: auto;
+      background: rgba(255,255,255,.85); padding: 2px 10px; border-radius: 4px;
+      white-space: nowrap; z-index: 6;
     }
     .op-spacer:hover .op-spacer-label { opacity: 1; }
-    @media print { .op-spacer-label { display: none; } }
+    .op-spacer-label input {
+      width: 48px; border: 1px solid var(--g300); border-radius: 3px;
+      text-align: center; font-size: 10px; font-family: 'Inter', sans-serif;
+      font-weight: 600; padding: 1px 2px; outline: none;
+    }
+    .op-spacer-label input:focus { border-color: #3b82f6; }
+    /* Spacer-specific resize handle — taller and more visible */
+    .spacer-resize-handle {
+      position: absolute; bottom: -4px; left: 0; right: 0; height: 16px;
+      cursor: row-resize; z-index: 7; background: transparent;
+      transition: background .12s;
+    }
+    .spacer-resize-handle::after {
+      content: ''; position: absolute; left: 50%; bottom: 5px;
+      transform: translateX(-50%); height: 4px; width: 48px;
+      border-radius: 2px; background: rgba(0,0,0,.2);
+      transition: background .12s, width .12s;
+    }
+    .op-spacer:hover .spacer-resize-handle::after {
+      background: rgba(59,130,246,.5); width: 64px;
+    }
+    .spacer-resize-handle.dragging {
+      background: rgba(59,130,246,.08);
+    }
+    .spacer-resize-handle.dragging::after {
+      background: rgba(59,130,246,.7); width: 64px;
+    }
+    @media print { .op-spacer-label { display: none; } .spacer-resize-handle { display: none !important; } }
 
     /* Remove button on extra blocks */
     .block-remove-btn {
@@ -2274,12 +2304,36 @@ function createExtraBlockElements(op) {
       el.className = 'op-spacer';
       el.setAttribute('data-block-id', blockId);
       el.style.height = (b.height || 60) + 'px';
-      el.innerHTML = '<div class="op-spacer-label">Mezera</div>';
 
-      // Vertical resize handle
+      const label = document.createElement('div');
+      label.className = 'op-spacer-label';
+      label.textContent = 'Mezera ' + (b.height || 60) + ' px';
+      label.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const current = b.height || 60;
+        label.innerHTML = '<input type="number" min="10" max="2000" value="' + current + '"> px';
+        const inp = label.querySelector('input');
+        inp.focus();
+        inp.select();
+        function apply() {
+          const v = Math.max(10, Math.min(2000, parseInt(inp.value) || current));
+          b.height = v;
+          el.style.height = v + 'px';
+          label.textContent = 'Mezera ' + v + ' px';
+          saveStorage();
+          updatePageMarkers();
+        }
+        inp.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); apply(); }
+          if (ev.key === 'Escape') { label.textContent = 'Mezera ' + current + ' px'; }
+        });
+        inp.addEventListener('blur', apply);
+      });
+      el.appendChild(label);
+
       const handleV = document.createElement('div');
-      handleV.className = 'photo-resize-handle-v';
-      initSpacerResizeV(handleV, el, b);
+      handleV.className = 'spacer-resize-handle';
+      initSpacerResizeV(handleV, el, b, label);
       el.appendChild(handleV);
 
       // Remove button
@@ -2322,7 +2376,7 @@ function initPhotoBlockResizeV(handle, el, blockData) {
   });
 }
 
-function initSpacerResizeV(handle, el, blockData) {
+function initSpacerResizeV(handle, el, blockData, label) {
   handle.addEventListener('mousedown', function(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -2333,15 +2387,17 @@ function initSpacerResizeV(handle, el, blockData) {
     const startH = el.offsetHeight;
     function onMove(ev) {
       const dy = ev.clientY - startY;
-      const newH = Math.max(10, startH + dy);
+      const newH = Math.max(10, Math.round(startH + dy));
       el.style.height = newH + 'px';
       blockData.height = newH;
+      if (label) label.textContent = 'Mezera ' + newH + ' px';
     }
     function onUp() {
       handle.classList.remove('dragging');
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       saveStorage();
+      updatePageMarkers();
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     }
