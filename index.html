@@ -2094,25 +2094,22 @@ function update() {
     if (collabVal && opCollabTitle.innerText !== collabVal) opCollabTitle.textContent = collabVal;
   }
 
-  // Campaign detail — check contenteditable content, not sidebar fields
+  // Campaign detail — always visible so user can click and type
   const campDescEl = document.getElementById('opCampDesc');
   const targetGroupEl = document.getElementById('opTargetGroup');
   const timingEl = document.getElementById('opTiming');
-  const campDesc    = campDescEl ? campDescEl.innerText.trim() : '';
   const targetGroup = targetGroupEl ? targetGroupEl.innerText.trim() : '';
   const timing      = timingEl ? timingEl.innerText.trim() : '';
 
   document.getElementById('opCampDescCol').style.display    = '';
   document.getElementById('opTargetGroupCol').style.display = '';
   document.getElementById('opTimingCol').style.display      = '';
+  document.getElementById('opCampHeading').style.display = '';
+  document.getElementById('opCampGrid').style.display    = '';
 
   // When both side columns are empty, expand campDesc to full width
   const hasSideCols = targetGroup || timing;
   document.getElementById('opCampGrid').classList.toggle('single-col', !hasSideCols);
-
-  const anyCamp = campDesc || targetGroup || timing;
-  document.getElementById('opCampHeading').style.display = anyCamp ? '' : 'none';
-  document.getElementById('opCampGrid').style.display    = anyCamp ? '' : 'none';
 
   // Auto-sum product prices into totalValue
   const pricedProducts = products.filter(p => p.price && p.price.trim());
